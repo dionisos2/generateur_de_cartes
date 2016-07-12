@@ -98,5 +98,4 @@ CarteManager.prototype.showCartes = function() {
 		carte.showCartes();
 		console.log("--------------------------------");
 	}
-	console.log(this.listOfCartes.length);
 }
