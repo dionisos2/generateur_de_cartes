@@ -3,15 +3,27 @@
 <head lang="fr">
     <meta charset="UTF-8">
     <title>générateur</title>
+	<script type="text/javascript" src="formulaire.js"></script>
 	<script type="text/javascript" src="carte.js"></script>
 	<script type="text/javascript" src="carte-manager.js"></script>
     <script type="text/javascript" src="test.js"></script>
 </head>
 <body >
 <p>
-    TAGADA
+    Copiez ici l'adresse de votre Framacalc
 	</p>
+	<input id="textForm" type="text" size="60" value="copiez ici l'URL de votre framacalc" />
+	 <button id="URLbutton" type="button">VALIDER</button> 
+	 <button id="CSVbutton" type="button">GÉNÉRER CSV</button> 
+	 </br>
+	 <iframe id="calcPage" src="#" width="750" height="550" frameborder=0 ></iframe>
+
 </body>
+<script>
+    window.onload = function (){ 
+main();
+};
+</script>
 </html>
 
 
