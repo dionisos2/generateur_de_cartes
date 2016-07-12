@@ -23,6 +23,7 @@ function parse_csv(leCSV) {
   var entries = [];
   var entry = [];
   var filteredEntries = [];
+  var columnHeaders = [];
   var textField = "";
   var depth = 0 ;
 
@@ -66,26 +67,30 @@ function parse_csv(leCSV) {
 
 }
 
-/*
-    // DELETION OF THE HEADERS AND TITLES (FIRST COLUMN IS NAN)
-    print "[parse_csv] Removing the headers and titles into ordered " + leCSV
-    for entry in entries:
-
-      // Good entry : generate
-      try:
-      test = int(entry[0])
-    filteredEntries.push(entry);
-
-    // Title : ignore
-    except ValueError:
-      pass
-
-
-    // RETURNS THE ORGANIZED AND FILTERED ENTRIES
-    return filteredEntries
-      */
-	console.log(entries);
+	  
   return entries ;
   }
   
-var untext = parse_csv(csvText) ;
+// EXTRACTING COLUMNS HEADERS
+ function filterHeaders(tableau){
+ console.log("[order_csv] Extracting columns headers ");
+ var lesHeaders = tableau.splice(0, 1);
+ return lesHeaders[0]
+ }
+ 
+ // EXTRACTING ENTRIES
+ function filterEntries(tableau){
+ console.log("[order_csv] Extracting entries ");
+ var lesEntries = tableau.splice(1, tableau.length - 1);
+ return lesEntries ;
+ }
+  
+var leTableau = parse_csv(csvText) ;
+columnHeaders = filterHeaders(leTableau) ;
+filteredEntries = filterEntries(leTableau) ;
+console.log(columnHeaders);
+console.log(filteredEntries);
+
+
+
+
