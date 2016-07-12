@@ -74,8 +74,7 @@ CarteManager.prototype.loadCsv = function (csvFile) {
 		}
 	}
 	this.columnsHeaders = entries.slice(0, 1)[0];
-	this.parsedCsv = entries.slice(1, entries.length - 1);
-
+	this.parsedCsv = entries.slice(1, entries.length);
 }
 
 CarteManager.prototype.createCartes = function() {
