@@ -1,5 +1,7 @@
-var carteManager = new CarteManager();
-carteManager.load_template_svg("");
-carteManager.load_csv("");
-carteManager.create_cartes();
-carteManager.show_cartes();
+$(document).ready(function() {
+	var carteManager = new CarteManager();
+	carteManager.loadTemplateSvg("carte");
+	carteManager.loadCsv('https://framacalc.org/test-minipen.csv');
+	carteManager.createCartes();
+	carteManager.showCartes();
+});
