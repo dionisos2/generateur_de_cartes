@@ -15,7 +15,7 @@ function CarteManager() {
 
 CarteManager.prototype.loadTemplateSvg = function (svgId) {
 	this.svgLoaded = true;
-	// $("#" + svgId).hide();
+	$("#" + svgId).hide();
 	this.templateSvg = "";
 
 }
@@ -99,4 +99,5 @@ CarteManager.prototype.showCartes = function() {
 		carte.showCartes();
 		console.log("--------------------------------");
 	}
+	console.log(this.listOfCartes.length);
 }

@@ -1,7 +1,14 @@
 $(document).ready(function() {
+	$( "#CSVbutton" ).click(function() {
+		showCartes();
+	});
+});
+
+function showCartes() {
 	var carteManager = new CarteManager();
 	carteManager.loadTemplateSvg("carte");
-	carteManager.loadCsv('https://framacalc.org/test-minipen.csv');
+	csvUrl = $("#calcPage").attr("src") + ".csv";
+	carteManager.loadCsv(csvUrl);
 	carteManager.createCartes();
 	carteManager.showCartes();
-});
+}
