@@ -1,11 +1,14 @@
 var framacalcUrlTextBox ;
+var svgTextBox ;
 var calcUrl ;
 var leCSV ;
+var leSVG;
 var svgCanvas ;
 
-function validateCalcUrl() {
-	updateCalc(getCalcUrl());		
-svgCanvas = new EmbeddedSVGEdit(window.frames.svgedit);
+function validateButtonCallback() {
+updateCalc(getCalcUrl());
+updateSVGPreview(getSVGCode());	
+//svgCanvas = new EmbeddedSVGEdit(window.frames.svgedit);
 console.log(svgCanvas);
 }
 
@@ -18,24 +21,38 @@ console.log("Framacalc chargé : " + getText) ;
 else {console.log("iframe null") ; }
 }
 
-function getCalcUrl(){
-    return document.getElementById('framacalcUrlTextBox').value;
+function updateSVGPreview(leCodeSVG){
+if(document.getElementById('svgPreview') != null) 
+{
+document.getElementById('svgPreview').svgCode = leCodeSVG;
+console.log("SVG chargé : " + getText) ;
+}
+else {console.log("svgPreview null") ; }
 }
 
-function launchCSV(){
+function printCSVtoConsole(){
 leCSV = calcUrl+'.csv';
 console.log(leCSV);
 }
 
 function setForm(){
 framacalcUrlTextBox = document.getElementById('framacalcUrlTextBox');
+svgTextBox = document.getElementById('svgTextBox');
 var urlButton = document.getElementById('URLbutton');
-urlButton.addEventListener('click', validateCalcUrl);
+urlButton.addEventListener('click', validateButtonCallback);
 }
 
 function setCSV(){
 var csvButton = document.getElementById('CSVbutton');
-csvButton.addEventListener('click', launchCSV);
+csvButton.addEventListener('click', printCSVtoConsole);
+}
+
+function getCalcUrl(){
+    return framacalcUrlTextBox.value;
+}
+
+function getSVGCode(){
+    return svgTextBox.value;
 }
 
 function main(){
