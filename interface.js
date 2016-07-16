@@ -31,6 +31,7 @@ console.log('ON SET FRAMES');
 frameCalc = document.getElementById('calcPage');
 frameSvg = document.getElementById('svgPage');
 console.log(frameCalc);
+console.log(frameSvg);
 //pagecalc.addEventListener('mouseover', activer);
 
 frameCalc.addEventListener("mouseover", activerCalc);
