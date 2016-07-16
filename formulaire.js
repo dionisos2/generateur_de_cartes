@@ -39,6 +39,7 @@ console.log(leCSV);
 }
 
 function initForm(){
+
 framacalcUrlTextBox = document.getElementById('framacalcUrlTextBox');
 framacalcUrlTextBox = "https://framacalc.org/test-minipen"
 
@@ -64,6 +65,7 @@ function getSVGCode(){
 }
 
 function main(){
+setFrames();
 initForm() ;
 }
 
