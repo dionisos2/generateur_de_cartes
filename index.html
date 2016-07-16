@@ -14,16 +14,15 @@
   </head>
   <body >
 	<p>
-	  <!-- <object id="carte" data="carte.svg" type="image/svg+xml"></object> -->
-      Copiez ici l'adresse de votre Framacalc
-	</p>
-	<input id="textForm" type="text" size="60" value="copiez ici l'URL de votre framacalc" />
+	Copiez ici l'adresse de votre Framacalc :
+	<input id="framacalcUrlTextBox" type="text" size="60" value="https://framacalc.org/test-minipen" />
 	<button id="URLbutton" type="button">VALIDER</button>
-	<button id="CSVbutton" type="button">GÉNÉRER CSV</button>
-	 </br>
-	 <iframe id="calcPage" src="" width="750" height="550" frameborder=0 ></iframe>
-	 <iframe id="svgPage" src="svg-edit-2.8.1/svg-editor.html" width="45%" height="550" frameborder=0 align="left"> </iframe>
-
+	<button id="CSVbutton" type="button">GÉNÉRER CSV</button>	   
+	</p>
+	 </br>	 
+	 
+        <iframe id="svgPage" src="svg-edit-2.8.1/svg-editor.html" width="45%" height="600" frameborder=0 align="left"> </iframe>
+	<iframe id="calcPage" src="" width="55%" height="600" frameborder=0 align="right"> </iframe>
   </body>
   <script>
     window.onload = function (){
