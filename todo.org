@@ -1,0 +1,3 @@
+* TODO pass all the code to english
+* TODO pass all the code to "standard" coding conventions
+  http://standardjs.com/
