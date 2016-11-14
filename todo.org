@@ -1,3 +1,5 @@
-* TODO pass all the code to english
-* TODO pass all the code to "standard" coding conventions
+* DONE pass all the code to "standard" coding conventions (60)
+  CLOSED: [2016-11-14 lun. 23:08]
   http://standardjs.com/
+* TODO pass all the code to english (30)
+* TODO reorganize files with modules (180)

@@ -1,39 +1,34 @@
 
 // EXTENSION DES IFRAMES AU SURVOL
 
-var frameCalc;
-var frameSvg;
+var frameCalc
+var frameSvg
 
-function activer(cible){
-cible.width = '90%' ;
-cible.height = '700px' ;
+function activer (cible) {
+  cible.width = '90%'
+  cible.height = '700px'
 }
 
-function desactiver(cible){
-cible.width = '5%' ;
-cible.height = '250px' ;
+function desactiver (cible) {
+  cible.width = '5%'
+  cible.height = '250px'
 }
 
-function activerCalc(){
-activer(frameCalc);
-desactiver(frameSvg);
+function activerCalc () {
+  activer(frameCalc)
+  desactiver(frameSvg)
 }
 
-function activerSvg(){
-activer(frameSvg);
-desactiver(frameCalc);
+function activerSvg () {
+  activer(frameSvg)
+  desactiver(frameCalc)
 }
 
-function setFrames(){
+function setFrames () {
+  frameCalc = document.getElementById('calcPage')
+  frameSvg = document.getElementById('svgPage')
 
-frameCalc = document.getElementById('calcPage');
-frameSvg = document.getElementById('svgPage');
-
-frameCalc.addEventListener("mouseover", activerCalc);
-frameSvg.addEventListener("mouseover", activerSvg);
-
+  frameCalc.addEventListener('mouseover', activerCalc)
+  frameSvg.addEventListener('mouseover', activerSvg)
 }
-
-
-
 
