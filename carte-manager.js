@@ -37,35 +37,35 @@ CarteManager.prototype.loadCsv = function (csvFile) {
   // CONTROL OF ALL CHARS OF THE DATABASE TEXT TO SEPARATE THE FIELDS (;)
   // console.log("[order_csv] Verifying chars to separate the fields into " + csvText);
   for (var i = 0; i < csvText.length; i++) {
-    var lettre = csvText.charAt(i)
+    var letter = csvText.charAt(i)
 
     // Separation
-    if (lettre === separationChar && depth === 0) {
+    if (letter === separationChar && depth === 0) {
       entry.push(textField)
       textField = ''
-      // console.log(i+' '+lettre+' séparation');
+      // console.log(i+' '+letter+' séparation');
     } else {
       // End of the line
-      if (lettre === endOfLineChar) {
+      if (letter === endOfLineChar) {
         entry.push(textField)
         entries.push(entry)
         textField = ''
         entry = []
-        // console.log(i+' '+lettre+' fin de ligne');
+        // console.log(i+' '+letter+' end of line');
       } else {
         // Quotation marks
-        if (lettre === quotationMarks) {
+        if (letter === quotationMarks) {
           if (depth === 0) {
             depth++
           } else {
             depth--
           }
           textField += "'"
-          // console.log(i+' '+lettre+' guillemets');
+          // console.log(i+' '+letter+' guillemets');
         } else {
-          // Normal lettre
-          textField += lettre
-          // console.log(i+' '+lettre);
+          // Normal letter
+          textField += letter
+          // console.log(i+' '+letter);
         }
       }
     }

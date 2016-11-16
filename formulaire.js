@@ -1,8 +1,7 @@
 var framacalcUrlTextBox
 var svgTextBox
 var calcUrl
-var leCSV
-var leSVG
+var CsvUrl
 var svgEdit
 var tmpSVG
 var sampleSVG1
@@ -13,8 +12,7 @@ function validateCalcButtonCallback () {
 }
 
 function validateSVGButtonCallback () {
-  leSVG = getSVGCode()
-  var tmpSVG = 'nothing'
+  var svgCode = getSVGCode()
   // updateSVGPreview(leSVG);
   console.log(svgEdit)
 
@@ -26,6 +24,7 @@ function validateSVGButtonCallback () {
   svgEdit.setSvgString(sampleSVG2)
   svgEdit.svgToString()(handleSvgData)
   console.log(tmpSVG)
+  return svgCode
 }
 
 function updateCalc (laUrl) {
@@ -45,8 +44,8 @@ function updateSVGPreview (leCodeSVG) {
 }
 
 function printCSVtoConsole () {
-  leCSV = calcUrl + '.csv'
-  console.log(leCSV)
+  CsvUrl = calcUrl + '.csv'
+  console.log(CsvUrl)
 }
 
 function initForm () {
@@ -78,7 +77,7 @@ function handleSvgData (data, error) {
   if (error) {
     alert('error ' + error)
   } else {
-    tmpSvg = data
+    tmpSVG = data
   }
 }
 

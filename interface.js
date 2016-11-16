@@ -4,31 +4,31 @@
 var frameCalc
 var frameSvg
 
-function activer (cible) {
+function activate (cible) {
   cible.width = '90%'
   cible.height = '700px'
 }
 
-function desactiver (cible) {
+function desactivate (cible) {
   cible.width = '5%'
   cible.height = '250px'
 }
 
-function activerCalc () {
-  activer(frameCalc)
-  desactiver(frameSvg)
+function activateCalc () {
+  activate(frameCalc)
+  desactivate(frameSvg)
 }
 
-function activerSvg () {
-  activer(frameSvg)
-  desactiver(frameCalc)
+function activateSvg () {
+  activate(frameSvg)
+  desactivate(frameCalc)
 }
 
 function setFrames () {
   frameCalc = document.getElementById('calcPage')
   frameSvg = document.getElementById('svgPage')
 
-  frameCalc.addEventListener('mouseover', activerCalc)
-  frameSvg.addEventListener('mouseover', activerSvg)
+  frameCalc.addEventListener('mouseover', activateCalc)
+  frameSvg.addEventListener('mouseover', activateSvg)
 }
 
