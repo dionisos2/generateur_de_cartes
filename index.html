@@ -1,38 +1,31 @@
 <!DOCTYPE html>
 <html>
-  <head lang="fr">
-    <meta charset="UTF-8">
-    <title>générateur</title>
-  	<script
-	   src="https://code.jquery.com/jquery-3.1.0.slim.min.js"
-	   integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8="
-	   crossorigin="anonymous"></script>
-	<script type="text/javascript" src="carte.js"></script>
-	<script type="text/javascript" src="carte-manager.js"></script>
-  <script type="text/javascript" src="test.js"></script>
-	<script type="text/javascript" src="interface.js"></script>
-	<script type="text/javascript" src="formulaire.js"></script>
-	<script type="text/javascript" src="svg-edit-2.8.1/embedapi.js"></script>
-  </head>
-  <body >
-	<p>
-	Copiez ici l'adresse de votre Framacalc :
-	<input id="framacalcUrlTextBox" type="text" size="60" value=" " />
-	<button id="validateCalcButton" type="button">VALIDER CSV</button>
-	<button id="CSVbutton" type="button">GÉNÉRER CSV</button>
-	</br>
-	Copiez ici le code de votre svg :
-	<input id="svgTextBox" type="text" size="60" value=" " />
-	<button id="validateSVGButton" type="button">VALIDER SVG</button>
-	</p>
-	<div id="svgPreview"></div>
-	<iframe id="calcPage" src="" width="55%" height="600" frameborder=0 align="left"> </iframe>
-    <iframe id="svgPage" src="svg-edit-2.8.1/svg-editor.html" width="45%" height="600" frameborder=0 align="right"> </iframe>
+    <head lang="fr">
+        <meta charset="UTF-8">
+        <title>générateur</title>
+  	    <script
+	          src="https://code.jquery.com/jquery-3.1.0.slim.min.js"
+	          integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8="
+	          crossorigin="anonymous"></script>
+        <script type="application/javascript" src="build/cards-generator.min.js"></script>
+        <script type="application/javascript" src="svg-edit-2.8.1/embedapi.js"></script>
+    </head>
+    <body >
+        <noscript>Your browser does not support JavaScript!</noscript>
+	      <p>
+	          Copiez ici l'adresse de votre Framacalc :
+	          <input id="framacalcUrlTextBox" type="text" size="60" value=" " />
+	          <button id="validateCalcButton" type="button">VALIDER CSV</button>
+	          <button id="CSVbutton" type="button">GÉNÉRER CSV</button>
+	          <br>
+	          Copiez ici le code de votre svg :
+	          <input id="svgTextBox" type="text" size="60" value=" " />
+	          <button id="validateSVGButton" type="button">VALIDER SVG</button>
+	      </p>
+	      <div id="svgPreview"></div>
+	      <iframe id="calcPage" src="" width="55%" height="600" frameborder=0 align="left"> </iframe>
+        <iframe id="svgPage" src="svg-edit-2.8.1/svg-editor.html" width="45%" height="600" frameborder=0 align="right"> </iframe>
 
-  </body>
-  <script>
-    window.onload = function (){
-	main();
-	};
-  </script>
+    </body>
+
 </html>

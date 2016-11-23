@@ -3,4 +3,5 @@
   http://standardjs.com/
 * DONE pass all the code to english (30)
   CLOSED: [2016-11-16 mer. 22:21]
-* TODO reorganize files with modules (180)
+* DONE reorganize files with modules (180)
+  CLOSED: [2016-11-23 mer. 06:49]

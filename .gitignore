@@ -4,3 +4,4 @@ svg-edit-2.8.1
 .eslintrc.json
 node_modules/
 package.json
+build/

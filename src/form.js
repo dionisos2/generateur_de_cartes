@@ -1,11 +1,14 @@
+/* global alert,EmbeddedSVGEdit */
+import setFrames from './interface'
+
+var sampleSVG1
+var sampleSVG2
 var framacalcUrlTextBox
 var svgTextBox
 var calcUrl
 var CsvUrl
 var svgEdit
 var tmpSVG
-var sampleSVG1
-var sampleSVG2
 
 function validateCalcButtonCallback () {
   updateCalc(getCalcUrl())
@@ -81,7 +84,7 @@ function handleSvgData (data, error) {
   }
 }
 
-function main () {
+export function main () {
   sampleSVG1 = '<svg width="640" height="480" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><!-- Created with SVG-edit - http://svg-edit.googlecode.com/ --><g><title>Layer 1</title><rect id="svg_1" height="3" width="0" y="77" x="169" stroke-width="5" stroke="#000000" fill="#FF0000"/><rect id="svg_2" height="289" width="200" y="78" x="168" stroke-width="5" stroke="#000000" fill="#FF0000"/><text xml:space="preserve" text-anchor="middle" font-family="serif" font-size="24" id="svg_3" y="110" x="266" stroke-width="0" stroke="#000000" fill="#000000">Titre carte</text></g></svg>'
 
   sampleSVG2 = '<svg width="640" height="480" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g><title>Layer 1</title><rect stroke-width="5" stroke="#000000" fill="#FF0000" id="svg_1" height="35" width="51" y="35" x="32"/><ellipse ry="15" rx="24" stroke-width="5" stroke="#000000" fill="#0000ff" id="svg_2" cy="60" cx="66"/></g></svg>'
