@@ -1,3 +1,6 @@
+import Svg from './svg'
+import {copy} from './tools'
+
 export default class Carte {
 
   construtor (columnsHeaders, parsedCsv, templateSvg) {
@@ -12,15 +15,15 @@ export default class Carte {
   }
 
   createSvg (templateSvg) {
-    this.svg = templateSvg // copy by value ? (should be)
+    this.svg = new Svg(templateSvg) // copy by value ? (should be)
     var svgText, boxId, svgBox
 
     for (var i = 0; i < this.columnsHeaders.length; i++) {
       // replace all entries by their associated values
-      svgText = getElementByValue(this.svg, this.columnsHeaders[i])
+      svgText = this.svg.getElementByValue(this.columnsHeaders[i])
       if (svgText.id.match('$' + this.textPrefix + '.*') != null) {
         boxId = svgText.id + this.boxPostfix
-        svgBox = getElementById(this.svg, boxId)
+        svgBox = this.svg.getElementById(boxId)
         this.addTextInBox(svgText, svgBox, this.parsedCsv[i])
       } else {
         this.svg.replace(this.columnsHeaders[i], this.parsedCsv[i])

@@ -39,12 +39,12 @@ function updateCalc (laUrl) {
   }
 }
 
-function updateSVGPreview (leCodeSVG) {
-  if (document.getElementById('svgPreview') != null) {
-    document.getElementById('svgPreview').innerHTML = leCodeSVG
-    console.log('SVG preview charg�')
-  } else { console.log('svgPreview null') }
-}
+// function updateSVGPreview (leCodeSVG) {
+//   if (document.getElementById('svgPreview') != null) {
+//     document.getElementById('svgPreview').innerHTML = leCodeSVG
+//     console.log('SVG preview charg�')
+//   } else { console.log('svgPreview null') }
+// }
 
 function printCSVtoConsole () {
   CsvUrl = calcUrl + '.csv'
