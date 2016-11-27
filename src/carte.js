@@ -3,7 +3,7 @@ import {copy} from './tools'
 
 export default class Carte {
 
-  construtor (columnsHeaders, parsedCsv, templateSvg) {
+  constructor (columnsHeaders, parsedCsv, templateSvg) {
     if (columnsHeaders.length !== parsedCsv.length) {
       throw new Error('columnsHeaders and parsedCsv doesn’t have the same length')
     }
