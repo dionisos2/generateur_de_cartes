@@ -5,7 +5,17 @@ Please follow these rules when contributing to this project :
 - Use these 7 rules in your commit message : http://chris.beams.io/posts/git-commit/
 - Use "standard" coding convention : http://standardjs.com
 - Use semantic versioning for releases : http://semver.org/
-- Use ES6 modules : http://exploringjs.com/es6/ch_modules.html (you could use http://rollupjs.org/ to bundle them)
+- Use ES6 modules : http://exploringjs.com/es6/ch_modules.html
 - Test code : https://mochajs.org/#getting-started (for mockery : https://sazzer.github.io/blog/2015/08/20/Unit-Testing-ES6-Modules-Mockery/)
+
+Before a commit, run :
+$ npm test
+(It is ok if mocha tests don’t pass, but standard tests should)
+
+To install all dependancies, run :
+$ npm install
+
+To compile, run :
+$ rollup -c
 
 Thank you !
