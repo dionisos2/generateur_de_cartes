@@ -1,28 +1,34 @@
 import Svg from './svg'
 import {copy} from './tools'
+import {TEXTPREFIX, BOXPOSTFIX, TEMPLATEHEADERNAME} from './const.js'
 
 export default class Carte {
 
-  constructor (columnsHeaders, parsedCsv, templateSvg) {
-    if (columnsHeaders.length !== parsedCsv.length) {
-      throw new Error('columnsHeaders and parsedCsv doesn’t have the same length')
+  constructor (caractDict, svgTemplateDict) {
+    this.caractDict = caractDict
+    this.svgTemplateDict = svgTemplateDict
+
+    if (!(TEMPLATEHEADERNAME in caractDict)) {
+      throw new Error(TEMPLATEHEADERNAME + ' should be a key of the CaractDict. (maybe it is missing as a header in the CSV table ?)')
     }
-    this.columnsHeaders = columnsHeaders
-    this.parsedCsv = parsedCsv
-    this.textPrefix = 'GDCBOX'
-    this.boxPostfix = 'BOX'
+    var templateFileName = this.caractDict[TEMPLATEHEADERNAME]
+    if (templateFileName in svgTemplateDict) {
+      this.svgTemplate = svgTemplateDict[templateFileName]
+    } else {
+      throw new Error(templateFileName + ' key not found in svgTemplateDict (this key is the file name of the svg template file)')
+    }
     // this.createSvg(templateSvg);
   }
 
-  createSvg (templateSvg) {
-    this.svg = new Svg(templateSvg) // copy by value ? (should be)
+  createSvg () {
+    this.svg = new Svg(this.svgTemplate) // copy by value ? (should be)
     var svgText, boxId, svgBox
 
     for (var i = 0; i < this.columnsHeaders.length; i++) {
       // replace all entries by their associated values
       svgText = this.svg.getElementByValue(this.columnsHeaders[i])
-      if (svgText.id.match('$' + this.textPrefix + '.*') != null) {
-        boxId = svgText.id + this.boxPostfix
+      if (svgText.id.match('$' + TEXTPREFIX + '.*') != null) {
+        boxId = svgText.id + BOXPOSTFIX
         svgBox = this.svg.getElementById(boxId)
         this.addTextInBox(svgText, svgBox, this.parsedCsv[i])
       } else {
@@ -54,4 +60,3 @@ export default class Carte {
     }
   }
 }
-

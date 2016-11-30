@@ -1,8 +1,9 @@
 {
   "name": "generateur_de_cartes",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Un super generateur de cartes",
   "main": "card-generator.js",
+  "bin": "./build/cards-generator.min.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dionisos2/generateur_de_cartes.git"
@@ -15,12 +16,15 @@
   "homepage": "https://github.com/dionisos2/generateur_de_cartes#readme",
   "devDependencies": {
     "chai": "^3.5.0",
+    "esdoc": "^0.4.8",
     "rollup-plugin-buble": "^0.14.0",
     "rollup-plugin-uglify": "^1.0.1",
     "standard": "*"
   },
   "scripts": {
-    "test": "standard && mocha --require reify test"
+    "test": "standard && mocha --require reify test",
+    "build": "rollup -c",
+    "generate-docs": "esdoc -c ./esdoc.json"
   },
   "dependencies": {
     "reify": "^0.4.3"
