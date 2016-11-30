@@ -1,18 +1,16 @@
 /* globals describe, it */
 import Carte from '../src/carte'
-var assert = require('assert')
+var expect = require('chai').expect
 
 describe('Carte', function () {
   describe('#constructor()', function () {
     it('Should create a card', function () {
       var carte = new Carte(['a', 'b'], ['a', 'b'], 'plop')
-      assert.equal(carte.textPrefix, 'GDCBOX')
+      expect(carte.textPrefix).to.equal('GDCBOX')
     })
     it('Should throw a error', function () {
-      assert.throws(
-        function () { new Carte(['a', 'b'], ['a'], 'plop') }, // eslint-disable-line no-new
-        Error
-      )
+      var createCarte = function () { new Carte(['a', 'b'], ['a'], 'plop') }// eslint-disable-line no-new
+      expect(createCarte).throws(Error, 'columnsHeaders and parsedCsv doesn’t have the same length')
     })
   })
 })
