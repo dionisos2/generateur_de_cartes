@@ -1,7 +1,7 @@
 /* global $ */
 
 import Carte from './carte'
-import getTextFromUrl from './tools'
+import getTextFromUrl from './utils'
 
 export default class CarteManager {
   construtor () {

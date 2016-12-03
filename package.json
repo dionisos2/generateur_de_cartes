@@ -19,10 +19,12 @@
     "esdoc": "^0.4.8",
     "rollup-plugin-buble": "^0.14.0",
     "rollup-plugin-uglify": "^1.0.1",
+    "sinon": "^1.17.6",
+    "sinon-chai": "^2.8.0",
     "standard": "*"
   },
   "scripts": {
-    "test": "standard && mocha --require reify test",
+    "test": "standard && mocha --bail --require reify test",
     "build": "rollup -c",
     "generate-docs": "esdoc -c ./esdoc.json"
   },
