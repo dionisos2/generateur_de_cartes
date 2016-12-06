@@ -1,29 +1,13 @@
 /* globals describe, it */
 import Carte from '../src/carte'
+import Svg from '../src/svg'
 import SvgInterface from '../src/svg-interface'
 var chai = require('chai')
 var sinon = require('sinon')
-var sinonChai = require('sinon-chai')
+// var sinonChai = require('sinon-chai')
 var expect = chai.expect
 var spy = sinon.spy
-chai.use(sinonChai)
-
-class MockSvg extends SvgInterface {
-  clone () {
-    return new MockSvg()
-  }
-
-  getElementByValue () {
-    return new MockSvg()
-  }
-
-  getElementById () {
-    return new MockSvg()
-  }
-
-  replaceText () {
-  }
-}
+// chai.use(sinonChai)
 
 /** @test {Carte} */
 describe('Carte', function () {
@@ -31,36 +15,28 @@ describe('Carte', function () {
   describe('#constructor()', function () {
     var caractDict = {'name': 'test', 'cost': '10'}
     it('Should create a card', function () {
-      var svg = new MockSvg()
+      var svg = new Svg()
       spy(svg, 'clone')
       var carte = new Carte(caractDict, svg)
       expect(carte.caractDict['name']).to.equal('test')
       expect(svg.clone).to.have.been.calledOnce
     })
-    it('Should throw a type error', function () {
+    it('Should throw a type error when the second parameter doesn’t implement SvgInterface', function () {
       var createCarte = function () { new Carte(caractDict, {}) }// eslint-disable-line no-new
       expect(createCarte).throws(TypeError, 'svgTemplate should implement SvgInterface')
     })
   })
   describe('#createSvg()', function () {
     var caractDict = {'name': 'test', 'cost': '10'}
-    it('Should create a svg', function () {
-      var svg = new MockSvg()
+    it('Should inject the caracts in the correct place in the svg', function () {
+      var svg = new Svg()
+      svg.load('./templates/test.svg')
       var carte = new Carte(caractDict, svg)
       carte.createSvg()
       expect(carte).to.have.property('svg')
       expect(carte.svg).to.be.an.instanceOf(SvgInterface)
-    })
-    it('Should call getElementByValue for name and cost', function () {
-      var svg = new MockSvg()
-      spy(MockSvg.prototype, 'getElementByValue')
-      var carte = new Carte(caractDict, svg)
-      carte.createSvg()
-
-      expect(svg)
-      expect(MockSvg.prototype.getElementByValue).to.have.been.calledTwice
-      expect(MockSvg.prototype.getElementByValue).to.have.been.calledWith('name')
-      expect(MockSvg.prototype.getElementByValue).to.have.been.calledWith('cost')
+      expect(carte.svg.getElementById('name_id')).to.equal('test')
+      expect(carte.svg.getElementById('cost_id')).to.equal('10')
     })
   })
 })

@@ -1,7 +1,8 @@
-export default class Svg {
-  constructor (templateSvg) {
-    // TODO create the actual class
-    this.templateSvg = templateSvg
+import SvgInterface from './svg-interface'
+
+export default class Svg extends SvgInterface {
+  constructor (svg) {
+    super()
   }
   getElementByValue (elementValue) {
     return null
@@ -9,5 +10,11 @@ export default class Svg {
 
   getElementById (elementId) {
     return null
+  }
+
+  clone () {
+  }
+
+  load () {
   }
 }
