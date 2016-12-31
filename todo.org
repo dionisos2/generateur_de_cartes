@@ -5,9 +5,10 @@
   CLOSED: [2016-11-16 mer. 22:21]
 * DONE reorganize files with modules (180)
   CLOSED: [2016-11-23 mer. 06:49]
-* TODO create mochajs tests for carte.js (60)
-* TODO create the interface of a class to manipulate svg images (just the needed functions) (30)
+* DONE create the interface of a class to manipulate svg images (just the needed functions) (30)
+  CLOSED: [2016-12-31 sam. 02:19]
 * TODO create the tests for the svg class (60)
 * TODO find a library to implement the svg class (the svg class is needed for decoupling) (90)
+* TODO create mochajs tests for carte.js (60)
 * TODO tests the carte-manager.js class (80)
 * TODO refactorize the form.js file (100)

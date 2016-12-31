@@ -19,12 +19,14 @@ export default class Carte {
 
     for (let caractName in this.caractDict) {
       // replace all entries by their associated values
-      let svgText = this.svg.getElementByValue(caractName)
-      let svgBox = this.svg.getElementById(TEXTPREFIX + caractName + BOXPOSTFIX)
+      let svgTspan = this.svg.getElementByValue(caractName)
+      let svgRect = this.svg.getElementById(TEXTPREFIX + caractName + BOXPOSTFIX)
 
       let caractValue = this.caractDict[caractName]
-      if (svgBox != null) {
-        this.addTextInBox(svgText, svgBox, caractValue)
+      if (svgRect != null) {
+        let svgText = svgTspan.parent()
+        svgTspan.remove()
+        svgText.wrapTextInRect(caractValue, svgRect)
       } else {
         this.svgText.replaceText(caractValue)
       }
@@ -35,8 +37,5 @@ export default class Carte {
     for (var i = 0; i < this.columnsHeaders.length; i++) {
       console.log(this.columnsHeaders[i] + ' = ' + this.parsedCsv[i])
     }
-  }
-
-  addTextInBox (svgText, svgBox, text) {
   }
 }
