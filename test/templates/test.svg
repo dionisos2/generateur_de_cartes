@@ -2,32 +2,30 @@
 <svg
     width="400mm"
     height="400mm">
-  <g>
-    <rect
-        style="fill:blue"
-        id="rect4852"
-        width="200"
-        height="200"
+  <rect
+      style="fill:blue"
+      id="rect4852"
+      width="200"
+      height="200"
+      x="100"
+      y="100">
+  </rect>
+  <text
+      style="font-size:200px"
+      text-anchor="left"
+      x="100"
+      y="100">
+    <tspan
         x="100"
-        y="100">
-    </rect>
-    <text
-        style="font-size:200px"
-        text-anchor="left"
+        y="100"
+        id="cost_id">
+      cost
+    </tspan>
+    <tspan
         x="100"
-        y="100">
-      <tspan
-          x="100"
-          y="100"
-          id="cost_id">
-        cost
-      </tspan>
-      <tspan
-          x="100"
-          y="300"
-          id="name_id">
-        name
-      </tspan>
-    </text>
-  </g>
+        y="300"
+        id="name_id">
+      name
+    </tspan>
+  </text>
 </svg>

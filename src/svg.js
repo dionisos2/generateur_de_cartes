@@ -17,4 +17,13 @@ export default class Svg extends SvgInterface {
 
   load () {
   }
+
+  replaceText () {
+  }
+
+  wrapTextInRect () {
+  }
+
+  remove () {
+  }
 }

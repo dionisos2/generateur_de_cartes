@@ -3,10 +3,10 @@
  */
 export default class SvgInterface {
   /**
-   * Create a svg image
+   * Create a empty svg image if filePath is null, load it otherwise (see {@link SvgInterface.load}).
    * @abstract
    */
-  constructor () {
+  constructor (filePath) {
     if (this.constructor === SvgInterface) {
       throw new TypeError('SvgInterface can’t be instantiated.')
     }

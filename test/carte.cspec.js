@@ -9,6 +9,8 @@ var expect = chai.expect
 var spy = sinon.spy
 // chai.use(sinonChai)
 
+require('./svg.cspec.js')
+
 /** @test {Carte} */
 describe('Carte', function () {
   /** @test {Carte#constructor} */
