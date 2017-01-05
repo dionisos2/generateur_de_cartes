@@ -31,6 +31,9 @@ export default class SvgInterface {
     if (this.remove === SvgInterface.prototype.remove) {
       throw new TypeError('Please implement abstract method "remove".')
     }
+    if (this.getValue === SvgInterface.prototype.getValue) {
+      throw new TypeError('Please implement abstract method "getValue".')
+    }
   }
 
   /**
@@ -106,5 +109,12 @@ export default class SvgInterface {
    */
   remove () {
     throw new TypeError('Do not call abstract method "remove" from child.')
+  }
+
+  /**
+   * Return the value of the svg element (the code between the start and end tags).
+   * @abstract
+   */
+  getValue () {
   }
 }

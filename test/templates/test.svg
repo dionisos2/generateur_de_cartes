@@ -11,21 +11,18 @@
       y="100">
   </rect>
   <text
-      style="font-size:200px"
+      style="font-size:40px"
       text-anchor="left"
-      x="100"
-      y="100">
-    <tspan
-        x="100"
-        y="100"
-        id="cost_id">
-      cost
+      x="300"
+      y="200">
+    <tspan id="tspan1">
+      theFirstSpan
     </tspan>
-    <tspan
-        x="100"
-        y="300"
-        id="name_id">
-      name
+    <tspan id="tspan2">
+      theSecondSpan
+    </tspan>
+    <tspan id="tspan3">
+      theFirstSpan
     </tspan>
   </text>
 </svg>
