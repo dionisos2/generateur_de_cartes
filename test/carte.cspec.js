@@ -23,7 +23,7 @@ describe('Carte', function () {
       expect(carte.caractDict['name']).to.equal('test')
       expect(svg.clone).to.have.been.calledOnce
     })
-    it('Should throw a type error when the second parameter doesn’t implement SvgInterface', function () {
+    it('Should throw a TypeError when the second parameter doesn’t implement SvgInterface', function () {
       var createCarte = function () { new Carte(caractDict, {}) }// eslint-disable-line no-new
       expect(createCarte).throws(TypeError, 'svgTemplate should implement SvgInterface')
     })

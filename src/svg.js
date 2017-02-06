@@ -29,4 +29,7 @@ export default class Svg extends SvgInterface {
 
   remove () {
   }
+
+  getValue () {
+  }
 }

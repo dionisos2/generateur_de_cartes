@@ -81,7 +81,7 @@ export default class SvgInterface {
    * Replace the value of this svg element if it contain only text.
    * @param {string} text - The text with what to replace the value of this element.
    * All special chars will be escaped.
-   * @throws {TypeError} Throw a error if this svg element don’t contain only text.
+   * @throws {TypeError} Throw a error if this svg element doesn’t contain only text.
    * @abstract
    */
   replaceText (text) {
