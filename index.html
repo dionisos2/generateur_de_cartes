@@ -8,6 +8,132 @@
 	          integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8="
 	          crossorigin="anonymous"></script>
         <script type="application/javascript" src="build/cards-generator.min.js"></script>
+        <style>
+            .tabs-container {
+                width: 100%;
+            }
+            
+            .tabs-header {
+                display: flex;
+                border-bottom: 2px solid #ddd;
+                margin-bottom: 15px;
+            }
+            
+            .tab-button {
+                background: #f0f0f0;
+                border: none;
+                padding: 10px 15px;
+                cursor: pointer;
+                border-radius: 5px 5px 0 0;
+                margin-right: 2px;
+                font-weight: bold;
+            }
+            
+            .tab-button:hover {
+                background: #e0e0e0;
+            }
+            
+            .tab-button.active {
+                background: #007cba;
+                color: white;
+            }
+            
+            .tab-content {
+                display: none;
+            }
+            
+            .tab-content.active {
+                display: block;
+            }
+            
+            .model-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 5px;
+                margin: 2px 0;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+                cursor: pointer;
+            }
+            
+            .model-item:hover {
+                background: #f0f8ff;
+            }
+            
+            .model-name {
+                flex-grow: 1;
+                font-weight: bold;
+            }
+            
+            .model-actions {
+                display: flex;
+                gap: 5px;
+            }
+            
+            .view-svg, .download-svg, .delete-model {
+                background: none;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                padding: 4px 6px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background-color 0.2s;
+            }
+            
+            .view-svg:hover {
+                background-color: #e3f2fd;
+                border-color: #2196f3;
+            }
+            
+            .download-svg:hover {
+                background-color: #e8f5e8;
+                border-color: #4caf50;
+            }
+            
+            .delete-model:hover {
+                background-color: #ffebee;
+                border-color: #f44336;
+            }
+            
+            .delete-model {
+                background: #ff4444;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                padding: 2px 6px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+            
+            .delete-model:hover {
+                background: #cc0000;
+            }
+            
+            .sheet-card {
+                border: 1px solid #ddd;
+                background: white;
+                min-height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                text-align: center;
+            }
+            
+            .sheet-card svg {
+                max-width: 100%;
+                max-height: 100%;
+            }
+            
+            .sheet-selector {
+                width: 100%;
+                padding: 5px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+            }
+        </style>
     </head>
     <body >
         <noscript>Your browser does not support JavaScript!</noscript>
@@ -22,32 +148,127 @@
                         <input id="framacalcUrlTextBox" type="text" size="60" value=" " style="width: 100%; max-width: 100%; box-sizing: border-box;" />
                     </p>
                     <p>
-                        <button id="validateCalcButton" type="button">VALIDER CSV</button>
-                        <button id="CSVbutton" type="button">GÉNÉRER CSV</button>
+                        <button id="validateCalcButton" type="button">CHARGER CSV DEPUIS FRAMACALC</button>
+                        <button id="CSVbutton" type="button" disabled title="Fonctionnalité à venir">SAUVEGARDER CSV DANS UN FICHIER</button>
                     </p>
+                    
                 </div>
             </div>
             <div style="flex: 0 0 calc(50% - 5px);">
-                <iframe id="svgPage" src="about:blank" width="100%" height="600" frameborder=0> </iframe>
+                <!-- Système d'onglets au-dessus du SVG -->
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <button class="tab-button active" data-tab="models">Modèles de cartes</button>
+                        <button class="tab-button" data-tab="generation">Génération</button>
+                        <button class="tab-button" data-tab="sheet">Planche de cartes</button>
+                    </div>
+                    
+                    <!-- Titre du SVG -->
+                    <div id="svgTitle" style="text-align: center; font-weight: bold; font-size: 16px; padding: 10px; background: #f0f0f0; border: 1px solid #ddd;">
+                        Modèle : Aucun
+                    </div>
+                    
+                    <!-- Zone SVG principale -->
+                    <iframe id="svgPage" src="about:blank" width="100%" height="500" frameborder=0> </iframe>
+                </div>
                 
+                <!-- Contenu des onglets sous le SVG -->
                 <div style="margin-top: 10px; overflow: hidden; width: 100%;">
-                    <h3>Gestion du SVG</h3>
-                    <p>
-                        <label for="svgTextBox">Code SVG (plusieurs lignes) :</label><br>
-                        <textarea id="svgTextBox" rows="8" style="width: 100%; max-width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px;" readonly="false"></textarea>
-                    </p>
-                    <p>
-                        <button id="validateSVGButton" type="button">CHARGER DEPUIS SVG LE CODE</button>
-                        <br><br>
-                        Ou sélectionnez un fichier SVG local :
-                        <input type="file" id="svgFileInput" accept=".svg" />
-                        <button id="loadSVGButton" type="button">CHARGER SVG DEPUIS LE FICHIER</button>
-                    </p>
+                    <!-- Onglet Modèles de cartes -->
+                    <div id="models-tab" class="tab-content active">
+                        <h3>Gestion des Modèles SVG</h3>
+                        
+                        <!-- Zone de saisie du nom du modèle -->
+                        <div style="margin-bottom: 15px;">
+                            <label for="modelNameInput">Nom du modèle :</label><br>
+                            <input type="text" id="modelNameInput" placeholder="Entrez un nom pour le modèle" style="width: 100%; max-width: 100%; box-sizing: border-box; margin-bottom: 5px;" />
+                            <button id="saveModelButton" type="button">AJOUTER LE MODÈLE</button>
+                        </div>
+                        
+                        <!-- Liste des modèles sauvegardés -->
+                        <div style="margin-bottom: 15px;">
+                            <h4>Modèles sauvegardés :</h4>
+                            <div id="modelsList" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+                                <p style="color: #666; font-style: italic;">Aucun modèle sauvegardé</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Zone d'édition SVG -->
+                        <div>
+                            <label for="svgTextBox">Code SVG (plusieurs lignes) :</label><br>
+                            <textarea id="svgTextBox" rows="6" style="width: 100%; max-width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px;" readonly="false"></textarea>
+                        </div>
+                        
+                        <div style="margin-top: 10px;">
+                            <button id="validateSVGButton" type="button">CHARGER DEPUIS SVG LE CODE</button>
+                            <br><br>
+                            Ou sélectionnez un fichier SVG local :
+                            <input type="file" id="svgFileInput" accept=".svg" />
+                            <button id="loadSVGButton" type="button">CHARGER SVG DEPUIS LE FICHIER</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Génération -->
+                    <div id="generation-tab" class="tab-content">
+                        <h3>Génération de Cartes</h3>
+                        
+                        <!-- Zone de génération -->
+                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
+                            <h4>Générer une carte :</h4>
+                            <p>
+                                <label for="modelSelector">Modèle à utiliser :</label><br>
+                                <select id="modelSelector" style="width: 200px; margin-right: 10px; margin-bottom: 10px;">
+                                    <option value="">Sélectionner un modèle</option>
+                                </select>
+                            </p>
+                            <p>
+                                <label for="cardLineInput">Numéro de ligne de la carte :</label><br>
+                                <input id="cardLineInput" type="number" min="1" value="1" style="width: 100px; margin-right: 10px;" />
+                                <button id="generateCardButton" type="button">GÉNÉRER LA CARTE</button>
+                            </p>
+                        </div>
+                        
+                        <!-- Liste des cartes générées -->
+                        <div style="margin-bottom: 15px;">
+                            <h4>Cartes générées :</h4>
+                            <div id="generatedCardsList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+                                <p style="color: #666; font-style: italic;">Aucune carte générée</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Planche de cartes -->
+                    <div id="sheet-tab" class="tab-content">
+                        <h3>Planche de Cartes</h3>
+                        
+                        <!-- Grille 3x3 des sélecteurs -->
+                        <div style="margin-bottom: 15px;">
+                            <h4>Sélection des cartes :</h4>
+                            <div id="sheetSelectors" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 15px;">
+                                <!-- Les 9 sélecteurs seront générés dynamiquement -->
+                            </div>
+                        </div>
+                        
+                        <!-- Zone de sauvegarde de la planche -->
+                        <div style="margin-bottom: 15px;">
+                            <label for="sheetNameInput">Nom de la planche :</label><br>
+                            <input type="text" id="sheetNameInput" placeholder="Entrez un nom pour la planche" style="width: 200px; margin-right: 10px;" />
+                            <button id="saveSheetButton" type="button">SAUVEGARDER LA PLANCHE</button>
+                        </div>
+                        
+                        <!-- Liste des planches sauvegardées -->
+                        <div>
+                            <h4>Planches sauvegardées :</h4>
+                            <div id="sheetsList" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+                                <p style="color: #666; font-style: italic;">Aucune planche sauvegardée</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div id="svgPreview"></div>
+	      <div id="svgPreview"></div>
 
     </body>
 

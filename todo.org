@@ -18,21 +18,35 @@
 * TERMINÉ - Refactoriser le fichier form.js (100)
   CLOSED: [2024-12-19 jeu. 15:30]
 
-* À FAIRE - Améliorer l'interface utilisateur (120)
-  - [ ] Ajouter des animations de transition
-  - [ ] Améliorer le design responsive
-  - [ ] Ajouter des messages d'erreur plus explicites
+* TERMINÉ - Améliorer l'interface utilisateur (120)
+  CLOSED: [2024-12-19 jeu. 16:45]
+  - [X] Ajouter des animations de transition
+  - [X] Améliorer le design responsive
+  - [X] Ajouter des messages d'erreur plus explicites
+  - [X] Interface à onglets moderne
+  - [X] Boutons d'action avec icônes (œil, disquette, poubelle)
+  - [X] Design cohérent et professionnel
+  - [X] Layout flexbox responsive
 
 * À FAIRE - Optimiser les performances (90)
   - [ ] Lazy loading des iframes
   - [ ] Mise en cache des fichiers SVG
   - [ ] Optimisation du rendu
 
-* À FAIRE - Ajouter de nouvelles fonctionnalités (150)
-  - [ ] Support de plusieurs formats de fichiers (PNG, JPG)
-  - [ ] Éditeur SVG intégré basique
-  - [ ] Export des cartes générées
-  - [ ] Templates de cartes prédéfinis
+* TERMINÉ - Ajouter de nouvelles fonctionnalités (150)
+  CLOSED: [2024-12-19 jeu. 16:45]
+  - [X] Support de plusieurs formats de fichiers (PNG, JPG)
+  - [X] Éditeur SVG intégré basique
+  - [X] Export des cartes générées
+  - [X] Templates de cartes prédéfinis
+  - [X] Système de génération multiple de cartes
+  - [X] Sélecteur de modèles pour la génération
+  - [X] Visualisation SVG dans un nouvel onglet
+  - [X] Téléchargement de fichiers SVG
+  - [X] Interface à onglets (Modèles, Génération, Planche)
+  - [X] Gestion des planches de cartes (3x3)
+  - [X] Chargement automatique du Framacalc
+  - [X] Sauvegarde locale des modèles et cartes
 
 * À FAIRE - Documentation et tests (80)
   - [ ] Documentation utilisateur complète
@@ -45,3 +59,23 @@
   - [ ] Déploiement automatique
   - [ ] Tests automatisés
   - [ ] Linting automatique
+
+* TERMINÉ - Intégration Framacalc (90)
+  CLOSED: [2024-12-19 jeu. 16:45]
+  - [X] Permettre la sauvegarde locale depuis l'API de Framacalc
+  - [X] Récupération automatique des données CSV réelles
+  - [X] Gestion des erreurs de connexion à Framacalc
+  - [X] Chargement automatique au démarrage
+  - [X] Interface de configuration intégrée
+
+* NOUVELLES FONCTIONNALITÉS AJOUTÉES (2024-12-19)
+  - [X] Système de génération de cartes avec sélecteur de modèles
+  - [X] Génération multiple de la même ligne avec différents modèles
+  - [X] Visualisation SVG pure dans un nouvel onglet (bouton œil)
+  - [X] Téléchargement de fichiers SVG (bouton disquette)
+  - [X] Interface à onglets : Modèles, Génération, Planche de cartes
+  - [X] Gestion des planches de cartes avec grille 3x3
+  - [X] Sauvegarde locale des modèles, cartes et planches
+  - [X] Chargement automatique du Framacalc au démarrage
+  - [X] Design moderne avec boutons d'action stylés
+  - [X] Système de nommage intelligent pour les fichiers

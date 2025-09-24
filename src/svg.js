@@ -17,7 +17,8 @@ export default class Svg extends SvgInterface {
     if (!this.svgElement) return null
     
     const elements = this.svgElement.querySelectorAll('tspan')
-    for (let element of elements) {
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i]
       if (element.textContent === elementValue) {
         return new SvgElementWrapper(element)
       }
@@ -220,7 +221,8 @@ class SvgElementWrapper extends SvgInterface {
     let yOffset = 0
     const lineHeight = 20 // Default line height
     
-    for (let word of words) {
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i]
       const testLine = currentLine + (currentLine ? ' ' : '') + word
       // Simple word wrapping logic - in a real implementation, 
       // you'd measure text width against rect width

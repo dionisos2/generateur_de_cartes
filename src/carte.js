@@ -49,4 +49,28 @@ export default class Carte {
       console.log(this.columnsHeaders[i] + ' = ' + this.parsedCsv[i])
     }
   }
+
+  getSvgText () {
+    console.log('=== DÉBUT getSvgText ===')
+    console.log('this.svg:', this.svg)
+    console.log('this.svg.svgElement:', this.svg ? this.svg.svgElement : 'this.svg is null')
+    
+    // Créer le SVG avec les données
+    this.createSvg()
+    
+    console.log('Après createSvg - this.svg:', this.svg)
+    console.log('Après createSvg - this.svg.svgElement:', this.svg ? this.svg.svgElement : 'this.svg is null')
+    
+    // Retourner le contenu HTML du SVG
+    let result = ''
+    if (this.svg && this.svg.svgElement) {
+      // Cloner l'élément pour éviter de modifier l'original
+      const clonedElement = this.svg.svgElement.cloneNode(true)
+      result = clonedElement.outerHTML
+    }
+    
+    console.log('Résultat getSvgText:', result ? 'Contenu trouvé' : 'Vide ou undefined')
+    console.log('=== FIN getSvgText ===')
+    return result
+  }
 }
