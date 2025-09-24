@@ -29,7 +29,9 @@ export default class Svg extends SvgInterface {
   getElementById (elementId) {
     if (!this.svgElement) return null
     
-    const element = this.svgElement.querySelector('#' + elementId)
+    // Échapper les caractères spéciaux dans l'ID pour le sélecteur CSS
+    const escapedId = elementId.replace(/[!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~]/g, '\\$&')
+    const element = this.svgElement.querySelector('#' + escapedId)
     return element ? new SvgElementWrapper(element) : null
   }
 

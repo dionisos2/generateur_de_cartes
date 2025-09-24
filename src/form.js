@@ -40,9 +40,15 @@ var currentModel = null // Modèle actuellement affiché
 var currentCard = null // Carte actuellement affichée
 
 function validateCalcButtonCallback () {
-  updateCalc(getCalcUrl())
+  console.log('=== DÉBUT validateCalcButtonCallback ===')
+  const calcUrl = getCalcUrl()
+  console.log('URL Framacalc:', calcUrl)
+  
+  updateCalc(calcUrl)
+  
   // Charger les données CSV pour la génération de cartes
   setTimeout(() => {
+    console.log('Chargement des données CSV depuis validateCalcButtonCallback...')
     loadCSVData()
   }, 1000) // Attendre un peu que l'iframe se charge
 }
@@ -117,9 +123,19 @@ function initForm () {
 
   var validateCalcButton = document.getElementById('validateCalcButton')
   if (validateCalcButton) {
-  validateCalcButton.addEventListener('click', validateCalcButtonCallback)
+    validateCalcButton.addEventListener('click', validateCalcButtonCallback)
   } else {
     console.error('validateCalcButton not found')
+  }
+
+  var reloadDataButton = document.getElementById('reloadDataButton')
+  if (reloadDataButton) {
+    reloadDataButton.addEventListener('click', function() {
+      console.log('=== RECHARGEMENT MANUEL DES DONNÉES ===')
+      loadCSVData()
+    })
+  } else {
+    console.error('reloadDataButton not found')
   }
 
   var validateSVGButton = document.getElementById('validateSVGButton')
@@ -176,6 +192,12 @@ export function main () {
   setTimeout(() => {
     console.log('Chargement automatique du Framacalc...')
     validateCalcButtonCallback()
+    
+    // Charger les données CSV après le chargement de l'iframe
+    setTimeout(() => {
+      console.log('Chargement des données CSV...')
+      loadCSVData()
+    }, 3000) // Attendre 3 secondes supplémentaires pour que l'iframe se charge
   }, 2000) // Attendre 2 secondes que tout soit initialisé
   
   // Exposer les fonctions au scope global pour les onclick
@@ -506,7 +528,18 @@ function generateCard() {
   const svgTemplate = new Svg()
   const svgElement = document.createElement('div')
   svgElement.innerHTML = savedModels[selectedModel]
-  svgTemplate.svgElement = svgElement.querySelector('svg')
+  const svgNode = svgElement.querySelector('svg')
+  
+  console.log('Modèle sélectionné:', selectedModel)
+  console.log('Contenu du modèle:', savedModels[selectedModel].substring(0, 200) + '...')
+  console.log('SVG trouvé:', svgNode)
+  
+  if (!svgNode) {
+    alert('Erreur: Le modèle sélectionné ne contient pas de SVG valide')
+    return
+  }
+  
+  svgTemplate.svgElement = svgNode
   
   // Créer la carte
   const carte = new Carte(csvHeaders, csvLine, svgTemplate)
@@ -669,8 +702,167 @@ function loadGeneratedCards() {
 
 // Fonction pour charger les données CSV (à appeler depuis validateCalcButtonCallback)
 function loadCSVData() {
-  // Toujours charger les données de test pour l'instant
-  console.log('Chargement des données CSV de test...')
+  console.log('=== DÉBUT loadCSVData ===')
+  console.log('URL Framacalc actuelle:', framacalcUrlTextBox ? framacalcUrlTextBox.value : 'undefined')
+  
+  // Essayer d'abord l'API Framacalc
+  tryLoadFromFramacalcAPI()
+}
+
+function tryLoadFromFramacalcAPI() {
+  try {
+    // Récupérer l'URL de Framacalc
+    const framacalcUrl = framacalcUrlTextBox.value.trim()
+    console.log('URL Framacalc détectée:', framacalcUrl)
+    
+    if (!framacalcUrl || framacalcUrl === ' ' || framacalcUrl === '') {
+      console.log('Aucune URL Framacalc fournie, utilisation des données de test')
+      loadTestData()
+      return
+    }
+    
+    // Même pour l'URL de test, essayer de charger les vraies données
+    console.log('Tentative de chargement des données depuis:', framacalcUrl)
+    
+    // Construire l'URL de l'API CSV
+    const csvUrl = framacalcUrl.replace(/\/$/, '') + '.csv'
+    console.log('Tentative de chargement depuis:', csvUrl)
+    
+    // Charger les données CSV via fetch
+    console.log('Début du fetch vers:', csvUrl)
+    fetch(csvUrl)
+      .then(function(response) {
+        console.log('Réponse reçue:', response.status, response.statusText)
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status + ': ' + response.statusText)
+        }
+        return response.text()
+      })
+      .then(function(csvText) {
+        console.log('Données CSV récupérées (premiers 200 caractères):', csvText.substring(0, 200) + '...')
+        console.log('Longueur totale du CSV:', csvText.length)
+        parseCSVData(csvText)
+      })
+      .catch(function(error) {
+        console.error('Erreur lors du chargement via API Framacalc:', error)
+        console.log('Tentative de chargement manuel...')
+        showManualDataInput()
+      })
+    
+  } catch (error) {
+    console.error('Erreur lors du chargement via API Framacalc:', error)
+    console.log('Tentative de chargement manuel...')
+    showManualDataInput()
+  }
+}
+
+function parseCSVData(csvText) {
+  try {
+    console.log('=== DÉBUT parseCSVData ===')
+    console.log('Texte CSV reçu (premiers 500 caractères):', csvText.substring(0, 500))
+    
+    const lines = csvText.split('\n').filter(line => line.trim().length > 0)
+    console.log('Lignes après filtrage:', lines.length)
+    console.log('Lignes:', lines)
+    
+    if (lines.length < 2) {
+      throw new Error('Pas assez de lignes dans le CSV')
+    }
+    
+    // Première ligne = en-têtes
+    csvHeaders = lines[0].split(',').map(header => header.trim().replace(/"/g, ''))
+    console.log('En-têtes extraits:', csvHeaders)
+    
+    // Lignes suivantes = données
+    csvData = lines.slice(1).map(line => {
+      return line.split(',').map(cell => cell.trim().replace(/"/g, ''))
+    }).filter(row => row.some(cell => cell.length > 0))
+    
+    console.log('=== DONNÉES CSV PARSÉES ===')
+    console.log('En-têtes:', csvHeaders)
+    console.log('Données:', csvData)
+    console.log('Nombre de lignes disponibles:', csvData.length)
+    
+    // Mettre à jour l'input de ligne
+    if (cardLineInput) {
+      cardLineInput.max = csvData.length
+      cardLineInput.placeholder = `1-${csvData.length}`
+    }
+    
+    // Afficher le succès
+    if (csvData.length > 0) {
+      console.log(`✅ ${csvData.length} lignes chargées depuis Framacalc`)
+      showDataStatus(`✅ ${csvData.length} lignes chargées depuis Framacalc`, 'success')
+    } else {
+      throw new Error('Aucune donnée valide trouvée')
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors du parsing CSV:', error)
+    showManualDataInput()
+  }
+}
+
+function showManualDataInput() {
+  console.log('Affichage de l\'interface de saisie manuelle...')
+  
+  // Créer une interface pour saisir les données manuellement
+  const manualDiv = document.createElement('div')
+  manualDiv.id = 'manualDataInput'
+  manualDiv.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #007bff;
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 2000;
+    max-width: 80vw;
+    max-height: 80vh;
+    overflow: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  `
+  
+  manualDiv.innerHTML = `
+    <h3>📊 Saisie des Données CSV</h3>
+    <p>Impossible de charger automatiquement depuis Framacalc. Veuillez coller vos données CSV :</p>
+    <textarea id="csvTextarea" placeholder="Collez ici vos données CSV (en-têtes sur la première ligne)..." 
+              style="width: 100%; height: 200px; font-family: monospace; font-size: 12px; margin: 10px 0;"></textarea>
+    <div style="text-align: right; margin-top: 10px;">
+      <button onclick="loadFromManualInput()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Charger les Données</button>
+      <button onclick="closeManualInput()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Annuler</button>
+    </div>
+  `
+  
+  document.body.appendChild(manualDiv)
+  
+  // Exposer les fonctions globalement
+  window.loadFromManualInput = loadFromManualInput
+  window.closeManualInput = closeManualInput
+}
+
+function loadFromManualInput() {
+  const csvText = document.getElementById('csvTextarea').value.trim()
+  if (!csvText) {
+    alert('Veuillez saisir des données CSV')
+    return
+  }
+  
+  parseCSVData(csvText)
+  closeManualInput()
+}
+
+function closeManualInput() {
+  const manualDiv = document.getElementById('manualDataInput')
+  if (manualDiv) {
+    manualDiv.remove()
+  }
+}
+
+function loadTestData() {
+  console.log('Chargement des données de test en fallback...')
   
   // Données de test simulées
   csvHeaders = ['Titre carte', 'type animal', 'habitat']
@@ -682,7 +874,7 @@ function loadCSVData() {
     ['Carte 5', 'Dauphin', 'Océan']
   ]
   
-  console.log('Données CSV chargées:', csvHeaders, csvData)
+  console.log('Données de test chargées:', csvHeaders, csvData)
   console.log('Nombre de lignes disponibles:', csvData.length)
   
   // Mettre à jour l'input de ligne avec la valeur maximale
@@ -690,6 +882,57 @@ function loadCSVData() {
     cardLineInput.max = csvData.length
     cardLineInput.placeholder = `1-${csvData.length}`
   }
+}
+
+function showDataStatus(message, type) {
+  // Créer ou mettre à jour l'indicateur de statut
+  let statusDiv = document.getElementById('dataStatus')
+  if (!statusDiv) {
+    statusDiv = document.createElement('div')
+    statusDiv.id = 'dataStatus'
+    statusDiv.style.cssText = `
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-weight: bold;
+      z-index: 1000;
+      max-width: 300px;
+      word-wrap: break-word;
+    `
+    document.body.appendChild(statusDiv)
+  }
+  
+  // Appliquer le style selon le type
+  if (type === 'success') {
+    statusDiv.style.backgroundColor = '#d4edda'
+    statusDiv.style.color = '#155724'
+    statusDiv.style.border = '1px solid #c3e6cb'
+  } else if (type === 'warning') {
+    statusDiv.style.backgroundColor = '#fff3cd'
+    statusDiv.style.color = '#856404'
+    statusDiv.style.border = '1px solid #ffeaa7'
+  } else if (type === 'error') {
+    statusDiv.style.backgroundColor = '#f8d7da'
+    statusDiv.style.color = '#721c24'
+    statusDiv.style.border = '1px solid #f5c6cb'
+  }
+  
+  statusDiv.textContent = message
+  
+  // Faire disparaître le message après 5 secondes
+  setTimeout(() => {
+    if (statusDiv) {
+      statusDiv.style.opacity = '0'
+      statusDiv.style.transition = 'opacity 0.5s'
+      setTimeout(() => {
+        if (statusDiv && statusDiv.parentNode) {
+          statusDiv.parentNode.removeChild(statusDiv)
+        }
+      }, 500)
+    }
+  }, 5000)
 }
 
 // ===== GESTION DE LA PLANCHE DE CARTES =====

@@ -79,3 +79,12 @@
   - [X] Chargement automatique du Framacalc au démarrage
   - [X] Design moderne avec boutons d'action stylés
   - [X] Système de nommage intelligent pour les fichiers
+
+* CORRECTIONS ET AMÉLIORATIONS (2024-12-19)
+  - [X] Correction du remplacement de texte qui ajoutait des chiffres
+  - [X] Désactivation de la méthode tspan pour éviter les doubles remplacements
+  - [X] Amélioration de la logique de remplacement global
+  - [X] Ajout de logs détaillés pour le diagnostic
+  - [X] Correction de l'échappement des sélecteurs CSS spéciaux
+  - [X] Déplacement des notifications de statut à gauche de l'écran
+  - [X] Optimisation du processus de génération de cartes
