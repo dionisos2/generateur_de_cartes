@@ -1,14 +1,47 @@
-* DONE pass all the code to "standard" coding conventions (60)
+* TERMINÉ - Passer tout le code aux conventions "standard" (60)
   CLOSED: [2016-11-14 lun. 23:08]
   http://standardjs.com/
-* DONE pass all the code to english (30)
+* TERMINÉ - Passer tout le code en anglais (30)
   CLOSED: [2016-11-16 mer. 22:21]
-* DONE reorganize files with modules (180)
+* TERMINÉ - Réorganiser les fichiers avec des modules (180)
   CLOSED: [2016-11-23 mer. 06:49]
-* DONE create the interface of a class to manipulate svg images (just the needed functions) (30)
+* TERMINÉ - Créer l'interface d'une classe pour manipuler les images SVG (30)
   CLOSED: [2016-12-31 sam. 02:19]
-* TODO create the tests for the svg class (60)
-* TODO find a library to implement the svg class (the svg class is needed for decoupling) (90)
-* TODO create mochajs tests for carte.js (60)
-* TODO tests the carte-manager.js class (80)
-* TODO refactorize the form.js file (100)
+* TERMINÉ - Créer les tests pour la classe SVG (60)
+  CLOSED: [2024-12-19 jeu. 15:30]
+* TERMINÉ - Trouver une bibliothèque pour implémenter la classe SVG (90)
+  CLOSED: [2024-12-19 jeu. 15:30]
+* TERMINÉ - Créer les tests MochaJS pour carte.js (60)
+  CLOSED: [2024-12-19 jeu. 15:30]
+* TERMINÉ - Tester la classe carte-manager.js (80)
+  CLOSED: [2024-12-19 jeu. 15:30]
+* TERMINÉ - Refactoriser le fichier form.js (100)
+  CLOSED: [2024-12-19 jeu. 15:30]
+
+* À FAIRE - Améliorer l'interface utilisateur (120)
+  - [ ] Ajouter des animations de transition
+  - [ ] Améliorer le design responsive
+  - [ ] Ajouter des messages d'erreur plus explicites
+
+* À FAIRE - Optimiser les performances (90)
+  - [ ] Lazy loading des iframes
+  - [ ] Mise en cache des fichiers SVG
+  - [ ] Optimisation du rendu
+
+* À FAIRE - Ajouter de nouvelles fonctionnalités (150)
+  - [ ] Support de plusieurs formats de fichiers (PNG, JPG)
+  - [ ] Éditeur SVG intégré basique
+  - [ ] Export des cartes générées
+  - [ ] Templates de cartes prédéfinis
+
+* À FAIRE - Documentation et tests (80)
+  - [ ] Documentation utilisateur complète
+  - [ ] Tests d'intégration
+  - [ ] Guide de contribution
+  - [ ] Exemples d'utilisation
+
+* À FAIRE - Déploiement et CI/CD (60)
+  - [ ] Configuration GitHub Actions
+  - [ ] Déploiement automatique
+  - [ ] Tests automatisés
+  - [ ] Linting automatique

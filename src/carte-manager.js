@@ -1,23 +1,27 @@
-/* global $ */
-
-import Carte from './carte'
-import getTextFromUrl from './utils'
+import Carte from './carte.js'
+import getTextFromUrl from './utils.js'
 
 export default class CarteManager {
-  construtor () {
+  constructor () {
     this.listOfCartes = []
     this.svgLoaded = false
     this.csvLoaded = false
   }
   loadTemplateSvg (svgId) {
     this.svgLoaded = true
-    $('#' + svgId).hide()
+    const element = document.getElementById(svgId)
+    if (element) {
+      element.style.display = 'none'
+    }
     this.templateSvg = ''
   }
 
   loadCsv (csvFile) {
     this.csvLoaded = true
     var csvText = getTextFromUrl(csvFile)
+    if (!csvText) {
+      throw new Error('Failed to load CSV file: ' + csvFile)
+    }
     // console.log(csvText);
     // CONSTANTS
     var separationChar = ','

@@ -6,6 +6,9 @@ export function getTextFromUrl (Url) {
   req.send(null)
   if (req.status === 200) {
     return req.responseText
+  } else {
+    console.error('Failed to load URL:', Url, 'Status:', req.status)
+    return null
   }
 }
 

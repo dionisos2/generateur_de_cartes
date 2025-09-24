@@ -7,8 +7,8 @@ function activate (domElement) {
 }
 
 function desactivate (domElement) {
-  domElement.width = '5%'
-  domElement.height = '250px'
+  domElement.width = '30%'  // Augmenté de 5% à 30%
+  domElement.height = '400px'  // Augmenté de 250px à 400px
 }
 
 function activateCalc (frameCalc, frameSvg) {
@@ -28,7 +28,14 @@ export default function setFrames () {
   frameCalc = document.getElementById('calcPage')
   frameSvg = document.getElementById('svgPage')
 
-  frameCalc.addEventListener('mouseover', function () { activateCalc(frameCalc, frameSvg) })
-  frameSvg.addEventListener('mouseover', function () { activateSvg(frameCalc, frameSvg) })
+  // Comportement de repli désactivé - les iframes gardent leur taille fixe
+  // frameCalc.addEventListener('mouseover', function () { activateCalc(frameCalc, frameSvg) })
+  // frameSvg.addEventListener('mouseover', function () { activateSvg(frameCalc, frameSvg) })
+  
+  // Taille fixe pour les deux iframes - layout 50/50
+  frameCalc.width = '100%'
+  frameCalc.height = '600px'
+  frameSvg.width = '100%'
+  frameSvg.height = '600px'
 }
 

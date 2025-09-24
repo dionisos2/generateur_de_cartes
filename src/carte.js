@@ -1,17 +1,26 @@
-import SvgInterface from './svg-interface'
+import SvgInterface from './svg-interface.js'
 import {TEXTPREFIX, BOXPOSTFIX} from './const.js'
 
 export default class Carte {
 
-  constructor (caractDict, svgTemplate) {
+  constructor (columnsHeaders, csvLine, svgTemplate) {
     if (!(svgTemplate instanceof SvgInterface)) {
       throw new TypeError('svgTemplate should implement SvgInterface')
     }
-    this.caractDict = caractDict
-    this.svgTemplate = svgTemplate
+    this.columnsHeaders = columnsHeaders
+    this.parsedCsv = csvLine
+    this.caractDict = this.createCaractDict(columnsHeaders, csvLine)
     this.svgTemplate = svgTemplate.clone()
 
     // this.createSvg(templateSvg);
+  }
+
+  createCaractDict (headers, csvLine) {
+    const dict = {}
+    for (let i = 0; i < headers.length; i++) {
+      dict[headers[i]] = csvLine[i]
+    }
+    return dict
   }
 
   createSvg () {
@@ -23,12 +32,14 @@ export default class Carte {
       let svgRect = this.svg.getElementById(TEXTPREFIX + caractName + BOXPOSTFIX)
 
       let caractValue = this.caractDict[caractName]
-      if (svgRect != null) {
-        let svgText = svgTspan.parent()
-        svgTspan.remove()
-        svgText.wrapTextInRect(caractValue, svgRect)
-      } else {
-        this.svgText.replaceText(caractValue)
+      if (svgTspan) {
+        if (svgRect != null) {
+          let svgText = svgTspan.parent()
+          svgTspan.remove()
+          svgText.wrapTextInRect(caractValue, svgRect)
+        } else {
+          svgTspan.replaceText(caractValue)
+        }
       }
     }
   }

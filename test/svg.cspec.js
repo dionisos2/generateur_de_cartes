@@ -1,7 +1,7 @@
 /* globals describe, it, beforeEach */
-import Svg from '../src/svg'
-var chai = require('chai')
-var expect = chai.expect
+import Svg from '../src/svg.js'
+import chai from 'chai'
+const expect = chai.expect
 
 /** @test {Svg} */
 describe('Svg', function () {

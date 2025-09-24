@@ -17,6 +17,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "esdoc": "^0.4.8",
+    "rollup": "^4.52.2",
     "rollup-plugin-buble": "^0.14.0",
     "rollup-plugin-uglify": "^1.0.1",
     "sinon": "^1.17.6",

@@ -8,23 +8,46 @@
 	          integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8="
 	          crossorigin="anonymous"></script>
         <script type="application/javascript" src="build/cards-generator.min.js"></script>
-        <script type="application/javascript" src="svg-edit-2.8.1/embedapi.js"></script>
     </head>
     <body >
         <noscript>Your browser does not support JavaScript!</noscript>
-	      <p>
-	          Copiez ici l'adresse de votre Framacalc :
-	          <input id="framacalcUrlTextBox" type="text" size="60" value=" " />
-	          <button id="validateCalcButton" type="button">VALIDER CSV</button>
-	          <button id="CSVbutton" type="button">GÉNÉRER CSV</button>
-	          <br>
-	          Copiez ici le code de votre svg :
-	          <input id="svgTextBox" type="text" size="60" value=" " />
-	          <button id="validateSVGButton" type="button">VALIDER SVG</button>
-	      </p>
-	      <div id="svgPreview"></div>
-	      <iframe id="calcPage" src="" width="55%" height="600" frameborder=0 align="left"> </iframe>
-        <iframe id="svgPage" src="svg-edit-2.8.1/svg-editor.html" width="45%" height="600" frameborder=0 align="right"> </iframe>
+	      <div style="display: flex; gap: 10px;">
+            <div style="flex: 0 0 calc(50% - 5px);">
+                <iframe id="calcPage" src="" width="100%" height="600" frameborder=0> </iframe>
+                
+                <div style="margin-top: 10px; overflow: hidden; width: 100%;">
+                    <h3>Configuration Framacalc</h3>
+                    <p>
+                        <label for="framacalcUrlTextBox">Copiez ici l'adresse de votre Framacalc :</label><br>
+                        <input id="framacalcUrlTextBox" type="text" size="60" value=" " style="width: 100%; max-width: 100%; box-sizing: border-box;" />
+                    </p>
+                    <p>
+                        <button id="validateCalcButton" type="button">VALIDER CSV</button>
+                        <button id="CSVbutton" type="button">GÉNÉRER CSV</button>
+                    </p>
+                </div>
+            </div>
+            <div style="flex: 0 0 calc(50% - 5px);">
+                <iframe id="svgPage" src="about:blank" width="100%" height="600" frameborder=0> </iframe>
+                
+                <div style="margin-top: 10px; overflow: hidden; width: 100%;">
+                    <h3>Gestion du SVG</h3>
+                    <p>
+                        <label for="svgTextBox">Code SVG (plusieurs lignes) :</label><br>
+                        <textarea id="svgTextBox" rows="8" style="width: 100%; max-width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px;" readonly="false"></textarea>
+                    </p>
+                    <p>
+                        <button id="validateSVGButton" type="button">CHARGER DEPUIS SVG LE CODE</button>
+                        <br><br>
+                        Ou sélectionnez un fichier SVG local :
+                        <input type="file" id="svgFileInput" accept=".svg" />
+                        <button id="loadSVGButton" type="button">CHARGER SVG DEPUIS LE FICHIER</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="svgPreview"></div>
 
     </body>
 
