@@ -88,3 +88,10 @@
   - [X] Correction de l'échappement des sélecteurs CSS spéciaux
   - [X] Déplacement des notifications de statut à gauche de l'écran
   - [X] Optimisation du processus de génération de cartes
+  - [X] Ajout d'onglets Images sources et Textes sources avec IndexedDB
+  - [X] Interface de zoom intégrée dans la barre de titre
+  - [X] Zone de redimensionnement entre les colonnes gauche et droite
+  - [X] Scrollbars personnalisées pour la zone d'affichage
+  - [X] Centrage automatique du contenu dans la zone d'affichage
+  - [X] Optimisation de la hauteur de la zone d'affichage (500px)
+  - [X] Amélioration de l'expérience utilisateur avec contrôles intuitifs

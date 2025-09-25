@@ -39,6 +39,23 @@ var currentSheet = new Array(9).fill(null) // Planche actuelle (9 cartes)
 var currentModel = null // Modèle actuellement affiché
 var currentCard = null // Carte actuellement affichée
 
+// Variables pour les images sources
+var imageFileInput
+var imageNameInput
+var uploadImageButton
+var imagesList
+var savedImages = {} // Stockage des images en mémoire (IndexedDB)
+
+// Variables pour les textes sources
+var textFileInput
+var textNameInput
+var uploadTextButton
+var textsList
+var savedTexts = {} // Stockage des textes en mémoire (IndexedDB)
+
+// IndexedDB
+var db = null
+
 function validateCalcButtonCallback () {
   console.log('=== DÉBUT validateCalcButtonCallback ===')
   const calcUrl = getCalcUrl()
@@ -175,6 +192,22 @@ export function main () {
   setFrames()
   initForm()
   
+  // Initialiser IndexedDB et les nouveaux onglets
+  initIndexedDB().then(() => {
+    console.log('IndexedDB initialisé avec succès')
+    initImagesManagement()
+    initTextsManagement()
+    
+    // Initialiser le redimensionnement des colonnes
+    initResizeHandle()
+    
+    // Initialiser les contrôles de zoom
+    initZoomControls()
+  }).catch(e => {
+    console.error('Erreur initialisation IndexedDB:', e)
+    showDataStatus('❌ Erreur initialisation base de données', 'error')
+  })
+  
   // Load default SVG
   loadSVGInIframe(sampleSVG1)
   
@@ -251,7 +284,6 @@ function loadSVGInIframe(svgContent) {
     </head>
     <body>
         <div class="svg-container">
-            <h3>Fichier SVG</h3>
             ${svgContent}
         </div>
     </body>
@@ -1087,19 +1119,1051 @@ function loadSavedSheets() {
 }
 
 function updateSVGTitle(tabType, itemName) {
-  const svgTitle = document.getElementById('svgTitle')
+  const svgTitleText = document.getElementById('svgTitleText')
+  if (!svgTitleText) return
   
   switch(tabType) {
     case 'models':
-      svgTitle.textContent = `Modèle : ${itemName}`
+      svgTitleText.textContent = `Modèle : ${itemName}`
       break
     case 'generation':
-      svgTitle.textContent = `Carte : ${itemName}`
+      svgTitleText.textContent = `Carte : ${itemName}`
       break
     case 'sheet':
-      svgTitle.textContent = 'Planche de cartes'
+      svgTitleText.textContent = 'Planche de cartes'
+      break
+    case 'images':
+      svgTitleText.textContent = `Image : ${itemName}`
+      break
+    case 'texts':
+      svgTitleText.textContent = `Texte : ${itemName}`
+      break
+    default:
+      svgTitleText.textContent = 'Aucun contenu sélectionné'
       break
   }
+}
+
+// ===== FONCTIONS INDEXEDDB =====
+
+// Initialiser IndexedDB
+function initIndexedDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('CardGeneratorDB', 1)
+    
+    request.onerror = () => {
+      console.error('Erreur IndexedDB:', request.error)
+      reject(request.error)
+    }
+    
+    request.onsuccess = () => {
+      db = request.result
+      console.log('IndexedDB initialisé')
+      resolve(db)
+    }
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result
+      
+      // Store pour les images
+      if (!db.objectStoreNames.contains('images')) {
+        const imageStore = db.createObjectStore('images', { keyPath: 'name' })
+        imageStore.createIndex('type', 'type', { unique: false })
+      }
+      
+      // Store pour les textes
+      if (!db.objectStoreNames.contains('texts')) {
+        const textStore = db.createObjectStore('texts', { keyPath: 'name' })
+        textStore.createIndex('type', 'type', { unique: false })
+      }
+    }
+  })
+}
+
+// Sauvegarder une image dans IndexedDB
+function saveImageToIndexedDB(name, file, type) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('IndexedDB non initialisé'))
+      return
+    }
+    
+    const transaction = db.transaction(['images'], 'readwrite')
+    const store = transaction.objectStore('images')
+    
+    const imageData = {
+      name: name,
+      type: type,
+      data: file,
+      size: file.size,
+      lastModified: file.lastModified
+    }
+    
+    const request = store.put(imageData)
+    
+    request.onsuccess = () => {
+      console.log('Image sauvegardée:', name)
+      resolve()
+    }
+    
+    request.onerror = () => {
+      console.error('Erreur sauvegarde image:', request.error)
+      reject(request.error)
+    }
+  })
+}
+
+// Charger toutes les images depuis IndexedDB
+function loadImagesFromIndexedDB() {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('IndexedDB non initialisé'))
+      return
+    }
+    
+    const transaction = db.transaction(['images'], 'readonly')
+    const store = transaction.objectStore('images')
+    const request = store.getAll()
+    
+    request.onsuccess = () => {
+      savedImages = {}
+      request.result.forEach(image => {
+        savedImages[image.name] = image
+      })
+      console.log('Images chargées:', Object.keys(savedImages).length)
+      resolve(savedImages)
+    }
+    
+    request.onerror = () => {
+      console.error('Erreur chargement images:', request.error)
+      reject(request.error)
+    }
+  })
+}
+
+// Supprimer une image de IndexedDB
+function deleteImageFromIndexedDB(name) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('IndexedDB non initialisé'))
+      return
+    }
+    
+    const transaction = db.transaction(['images'], 'readwrite')
+    const store = transaction.objectStore('images')
+    const request = store.delete(name)
+    
+    request.onsuccess = () => {
+      console.log('Image supprimée:', name)
+      resolve()
+    }
+    
+    request.onerror = () => {
+      console.error('Erreur suppression image:', request.error)
+      reject(request.error)
+    }
+  })
+}
+
+// Sauvegarder un texte dans IndexedDB
+function saveTextToIndexedDB(name, content, type) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('IndexedDB non initialisé'))
+      return
+    }
+    
+    const transaction = db.transaction(['texts'], 'readwrite')
+    const store = transaction.objectStore('texts')
+    
+    const textData = {
+      name: name,
+      type: type,
+      content: content,
+      size: content.length,
+      lastModified: Date.now()
+    }
+    
+    const request = store.put(textData)
+    
+    request.onsuccess = () => {
+      console.log('Texte sauvegardé:', name)
+      resolve()
+    }
+    
+    request.onerror = () => {
+      console.error('Erreur sauvegarde texte:', request.error)
+      reject(request.error)
+    }
+  })
+}
+
+// Charger tous les textes depuis IndexedDB
+function loadTextsFromIndexedDB() {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('IndexedDB non initialisé'))
+      return
+    }
+    
+    const transaction = db.transaction(['texts'], 'readonly')
+    const store = transaction.objectStore('texts')
+    const request = store.getAll()
+    
+    request.onsuccess = () => {
+      savedTexts = {}
+      request.result.forEach(text => {
+        savedTexts[text.name] = text
+      })
+      console.log('Textes chargés:', Object.keys(savedTexts).length)
+      resolve(savedTexts)
+    }
+    
+    request.onerror = () => {
+      console.error('Erreur chargement textes:', request.error)
+      reject(request.error)
+    }
+  })
+}
+
+// Supprimer un texte de IndexedDB
+function deleteTextFromIndexedDB(name) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('IndexedDB non initialisé'))
+      return
+    }
+    
+    const transaction = db.transaction(['texts'], 'readwrite')
+    const store = transaction.objectStore('texts')
+    const request = store.delete(name)
+    
+    request.onsuccess = () => {
+      console.log('Texte supprimé:', name)
+      resolve()
+    }
+    
+    request.onerror = () => {
+      console.error('Erreur suppression texte:', request.error)
+      reject(request.error)
+    }
+  })
+}
+
+// ===== FONCTIONS DE REDIMENSIONNEMENT =====
+
+// Initialiser le redimensionnement des colonnes
+function initResizeHandle() {
+  const resizeHandle = document.getElementById('resizeHandle')
+  const leftColumn = document.getElementById('leftColumn')
+  const rightColumn = document.getElementById('rightColumn')
+  
+  if (!resizeHandle || !leftColumn || !rightColumn) {
+    console.error('Éléments de redimensionnement non trouvés')
+    return
+  }
+  
+  let isDragging = false
+  let startX = 0
+  let startLeftWidth = 0
+  let startRightWidth = 0
+  let mouseMoveHandler = null
+  let mouseUpHandler = null
+  
+  // Fonction pour gérer le mousemove
+  function handleMouseMove(e) {
+    if (!isDragging) return
+    
+    const deltaX = e.clientX - startX
+    const containerWidth = leftColumn.parentElement.getBoundingClientRect().width
+    const handleWidth = 10 // Largeur de la poignée
+    
+    // Calculer les nouvelles largeurs
+    let newLeftWidth = startLeftWidth + deltaX
+    let newRightWidth = startRightWidth - deltaX
+    
+    // Appliquer les contraintes de largeur minimale
+    const minWidth = 200
+    if (newLeftWidth < minWidth) {
+      newLeftWidth = minWidth
+      newRightWidth = containerWidth - newLeftWidth - handleWidth
+    }
+    if (newRightWidth < minWidth) {
+      newRightWidth = minWidth
+      newLeftWidth = containerWidth - newRightWidth - handleWidth
+    }
+    
+    // Appliquer les nouvelles largeurs
+    const leftPercentage = (newLeftWidth / containerWidth) * 100
+    const rightPercentage = (newRightWidth / containerWidth) * 100
+    
+    leftColumn.style.flex = `0 0 ${leftPercentage}%`
+    rightColumn.style.flex = `0 0 ${rightPercentage}%`
+  }
+  
+  // Fonction pour arrêter le redimensionnement
+  function handleMouseUp() {
+    if (!isDragging) return
+    
+    console.log('Arrêt du redimensionnement')
+    
+    isDragging = false
+    resizeHandle.classList.remove('dragging')
+    
+    // Restaurer les styles
+    document.body.style.userSelect = ''
+    document.body.style.cursor = ''
+    
+    // Sauvegarder les proportions dans localStorage
+    const leftPercentage = parseFloat(leftColumn.style.flex.split(' ')[2])
+    const rightPercentage = parseFloat(rightColumn.style.flex.split(' ')[2])
+    
+    localStorage.setItem('leftColumnWidth', leftPercentage.toString())
+    localStorage.setItem('rightColumnWidth', rightPercentage.toString())
+    
+    console.log(`Colonnes redimensionnées: Gauche ${leftPercentage.toFixed(1)}%, Droite ${rightPercentage.toFixed(1)}%`)
+    
+    // Supprimer les événements globaux
+    if (mouseMoveHandler) {
+      document.removeEventListener('mousemove', mouseMoveHandler)
+      mouseMoveHandler = null
+    }
+    if (mouseUpHandler) {
+      document.removeEventListener('mouseup', mouseUpHandler)
+      window.removeEventListener('blur', mouseUpHandler)
+      mouseUpHandler = null
+    }
+  }
+  
+  // Démarrer le redimensionnement
+  resizeHandle.addEventListener('mousedown', function(e) {
+    // Vérifier qu'aucun redimensionnement n'est déjà en cours
+    if (isDragging) {
+      console.log('Redimensionnement déjà en cours, ignoré')
+      return
+    }
+    
+    console.log('Début du redimensionnement')
+    
+    isDragging = true
+    startX = e.clientX
+    
+    // Récupérer les largeurs actuelles
+    const leftRect = leftColumn.getBoundingClientRect()
+    const rightRect = rightColumn.getBoundingClientRect()
+    startLeftWidth = leftRect.width
+    startRightWidth = rightRect.width
+    
+    // Ajouter la classe de redimensionnement
+    resizeHandle.classList.add('dragging')
+    
+    // Empêcher la sélection de texte
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+    
+    // Créer les handlers avec des références pour pouvoir les supprimer
+    mouseMoveHandler = handleMouseMove
+    mouseUpHandler = handleMouseUp
+    
+    // Ajouter les événements globaux
+    document.addEventListener('mousemove', mouseMoveHandler)
+    document.addEventListener('mouseup', mouseUpHandler)
+    window.addEventListener('blur', mouseUpHandler) // Arrêter si la fenêtre perd le focus
+    
+    e.preventDefault()
+    e.stopPropagation()
+  })
+  
+  // Empêcher le redimensionnement si on survole la poignée sans cliquer
+  resizeHandle.addEventListener('mouseenter', function() {
+    if (!isDragging) {
+      resizeHandle.style.cursor = 'col-resize'
+    }
+  })
+  
+  resizeHandle.addEventListener('mouseleave', function() {
+    if (!isDragging) {
+      resizeHandle.style.cursor = 'col-resize'
+    }
+  })
+  
+  // Charger les proportions sauvegardées
+  loadSavedColumnWidths()
+}
+
+// Charger les largeurs de colonnes sauvegardées
+function loadSavedColumnWidths() {
+  const leftPercentage = localStorage.getItem('leftColumnWidth')
+  const rightPercentage = localStorage.getItem('rightColumnWidth')
+  
+  const leftColumn = document.getElementById('leftColumn')
+  const rightColumn = document.getElementById('rightColumn')
+  
+  if (leftColumn && rightColumn) {
+    if (leftPercentage && rightPercentage) {
+      // Restaurer les largeurs sauvegardées
+      leftColumn.style.flex = `0 0 ${leftPercentage}%`
+      rightColumn.style.flex = `0 0 ${rightPercentage}%`
+      console.log(`Largeurs restaurées: Gauche ${leftPercentage}%, Droite ${rightPercentage}%`)
+    } else {
+      // Utiliser les valeurs par défaut (40% gauche, 60% droite)
+      leftColumn.style.flex = '0 0 40%'
+      rightColumn.style.flex = '0 0 60%'
+      console.log('Largeurs par défaut appliquées: Gauche 40%, Droite 60%')
+    }
+  }
+}
+
+// ===== FONCTIONS CHARGEMENT DANS LA ZONE SVG =====
+
+// Variables globales pour le zoom
+let currentZoomLevel = 1
+const minZoom = 0.1
+const maxZoom = 5
+const zoomStep = 0.1
+
+// Initialiser les contrôles de zoom
+function initZoomControls() {
+  const zoomOut = document.getElementById('zoomOut')
+  const zoomIn = document.getElementById('zoomIn')
+  const zoomReset = document.getElementById('zoomReset')
+  const zoomLevel = document.getElementById('zoomLevel')
+  const svgContainer = document.getElementById('svgContainer')
+  
+  if (!zoomOut || !zoomIn || !zoomReset || !zoomLevel || !svgContainer) {
+    console.error('Contrôles de zoom non trouvés')
+    return
+  }
+  
+  // Fonction pour mettre à jour l'affichage du zoom
+  function updateZoomDisplay() {
+    zoomLevel.textContent = Math.round(currentZoomLevel * 100) + '%'
+  }
+  
+  // Fonction pour appliquer le zoom
+  function applyZoom() {
+    const iframe = svgContainer.querySelector('iframe')
+    if (iframe) {
+      iframe.style.transform = `scale(${currentZoomLevel})`
+      iframe.style.transformOrigin = 'top left'
+      
+      // Ajuster la taille du conteneur pour le zoom
+      const containerWidth = svgContainer.clientWidth
+      const containerHeight = svgContainer.clientHeight
+      
+      // Calculer les nouvelles dimensions
+      const newWidth = Math.max(500, containerWidth * currentZoomLevel)
+      const newHeight = Math.max(800, containerHeight * currentZoomLevel)
+      
+      iframe.style.width = newWidth + 'px'
+      iframe.style.height = newHeight + 'px'
+      
+      // Centrer le contenu après zoom
+      setTimeout(() => {
+        centerContentInContainer(svgContainer)
+      }, 50)
+    }
+    updateZoomDisplay()
+  }
+  
+  // Événements pour les boutons de zoom
+  zoomOut.addEventListener('click', function() {
+    if (currentZoomLevel > minZoom) {
+      currentZoomLevel = Math.max(minZoom, currentZoomLevel - zoomStep)
+      applyZoom()
+      console.log('Zoom out:', currentZoomLevel)
+    }
+  })
+  
+  zoomIn.addEventListener('click', function() {
+    if (currentZoomLevel < maxZoom) {
+      currentZoomLevel = Math.min(maxZoom, currentZoomLevel + zoomStep)
+      applyZoom()
+      console.log('Zoom in:', currentZoomLevel)
+    }
+  })
+  
+  zoomReset.addEventListener('click', function() {
+    currentZoomLevel = 1
+    applyZoom()
+    console.log('Zoom reset:', currentZoomLevel)
+  })
+  
+  // Zoom avec la molette de la souris
+  svgContainer.addEventListener('wheel', function(e) {
+    if (e.ctrlKey) {
+      e.preventDefault()
+      
+      if (e.deltaY < 0) {
+        // Zoom in
+        if (currentZoomLevel < maxZoom) {
+          currentZoomLevel = Math.min(maxZoom, currentZoomLevel + zoomStep)
+          applyZoom()
+        }
+      } else {
+        // Zoom out
+        if (currentZoomLevel > minZoom) {
+          currentZoomLevel = Math.max(minZoom, currentZoomLevel - zoomStep)
+          applyZoom()
+        }
+      }
+    }
+  })
+  
+  // Initialiser l'affichage
+  updateZoomDisplay()
+  console.log('Contrôles de zoom initialisés')
+}
+
+// Centrer le contenu dans le conteneur avec scrollbars
+function centerContentInContainer(container) {
+  if (!container) return
+  
+  // Attendre que l'iframe soit chargé
+  const iframe = container.querySelector('iframe')
+  if (!iframe) return
+  
+  // Calculer la position de scroll pour centrer le contenu
+  const containerRect = container.getBoundingClientRect()
+  const scrollWidth = container.scrollWidth
+  const scrollHeight = container.scrollHeight
+  
+  // Centrer horizontalement et verticalement
+  const centerX = Math.max(0, (scrollWidth - containerRect.width) / 2)
+  const centerY = Math.max(0, (scrollHeight - containerRect.height) / 2)
+  
+  // Appliquer le scroll avec animation
+  container.scrollTo({
+    left: centerX,
+    top: centerY,
+    behavior: 'smooth'
+  })
+  
+  console.log(`Contenu centré: scrollX=${centerX.toFixed(0)}, scrollY=${centerY.toFixed(0)}`)
+}
+
+// Redimensionner l'iframe selon le contenu
+function resizeIframeToContent(iframe) {
+  if (!iframe) return
+  
+  try {
+    // Attendre que le contenu soit chargé
+    iframe.onload = function() {
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow.document
+        if (doc) {
+          const body = doc.body
+          if (body) {
+            // Calculer la taille nécessaire
+            const minWidth = 500
+            const minHeight = 800
+            
+            // Obtenir la taille du contenu
+            const contentWidth = Math.max(minWidth, body.scrollWidth)
+            const contentHeight = Math.max(minHeight, body.scrollHeight)
+            
+            // Redimensionner l'iframe
+            iframe.style.width = contentWidth + 'px'
+            iframe.style.height = contentHeight + 'px'
+            
+            console.log(`Iframe redimensionnée: ${contentWidth}x${contentHeight}`)
+          }
+        }
+      } catch (e) {
+        console.log('Impossible d\'accéder au contenu de l\'iframe (CORS)')
+      }
+    }
+  } catch (e) {
+    console.log('Erreur lors du redimensionnement de l\'iframe:', e)
+  }
+}
+
+// Charger une image dans la zone SVG
+function loadImageInSVGArea(image, name) {
+  const iframe = document.getElementById('svgPage')
+  const container = document.getElementById('svgContainer')
+  if (!iframe || !container) {
+    console.error('Éléments SVG non trouvés')
+    return
+  }
+  
+  // Créer un blob URL pour l'image
+  const blob = new Blob([image.data], { type: `image/${image.type}` })
+  const imageUrl = URL.createObjectURL(blob)
+  
+  // Créer le contenu HTML avec l'image
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Image: ${name}</title>
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 800px;
+          min-width: 500px;
+          background: #f5f5f5;
+        }
+        .image-container {
+          max-width: 100%;
+          max-height: 100%;
+          text-align: center;
+        }
+        .image-container img {
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain;
+          border: 2px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .image-info {
+          margin-top: 10px;
+          color: #666;
+          font-family: Arial, sans-serif;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="image-container">
+        <img src="${imageUrl}" alt="${name}" />
+        <div class="image-info">
+          <strong>${name}</strong><br>
+          Type: ${image.type.toUpperCase()} | Taille: ${Math.round(image.size / 1024)} KB
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+  
+  // Charger le contenu dans l'iframe
+  iframe.srcdoc = htmlContent
+  
+  // Centrer le contenu après chargement
+  setTimeout(() => {
+    centerContentInContainer(container)
+  }, 100)
+}
+
+// Charger un texte dans la zone SVG
+function loadTextInSVGArea(text, name) {
+  const iframe = document.getElementById('svgPage')
+  const container = document.getElementById('svgContainer')
+  if (!iframe || !container) {
+    console.error('Éléments SVG non trouvés')
+    return
+  }
+  
+  // Créer le contenu HTML avec le texte
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Texte: ${name}</title>
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          background: #f5f5f5;
+          font-family: 'Courier New', monospace;
+          min-height: 800px;
+          min-width: 500px;
+        }
+        .text-container {
+          max-width: 100%;
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          overflow-x: auto;
+        }
+        .text-info {
+          margin-bottom: 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #ddd;
+          color: #666;
+          font-family: Arial, sans-serif;
+        }
+        .text-content {
+          line-height: 1.6;
+          color: #333;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="text-container">
+        <div class="text-info">
+          <strong>${name}</strong><br>
+          Type: ${text.type.toUpperCase()} | Taille: ${Math.round(text.size / 1024)} KB
+        </div>
+        <div class="text-content">${text.content}</div>
+      </div>
+    </body>
+    </html>
+  `
+  
+  // Charger le contenu dans l'iframe
+  iframe.srcdoc = htmlContent
+  
+  // Centrer le contenu après chargement
+  setTimeout(() => {
+    centerContentInContainer(container)
+  }, 100)
+}
+
+// ===== FONCTIONS GESTION IMAGES =====
+
+// Initialiser la gestion des images
+function initImagesManagement() {
+  imageFileInput = document.getElementById('imageFileInput')
+  imageNameInput = document.getElementById('imageNameInput')
+  uploadImageButton = document.getElementById('uploadImageButton')
+  imagesList = document.getElementById('imagesList')
+  
+  if (!imageFileInput || !imageNameInput || !uploadImageButton || !imagesList) {
+    console.error('Éléments de gestion des images non trouvés')
+    return
+  }
+  
+  // Événements
+  uploadImageButton.addEventListener('click', uploadImage)
+  
+  // Charger les images sauvegardées
+  loadImagesFromIndexedDB().then(() => {
+    updateImagesList()
+  }).catch(e => {
+    console.error('Erreur chargement images:', e)
+    savedImages = {}
+  })
+}
+
+// Uploader une image
+function uploadImage() {
+  const file = imageFileInput.files[0]
+  const name = imageNameInput.value.trim()
+  
+  if (!file) {
+    alert('Veuillez sélectionner un fichier image')
+    return
+  }
+  
+  if (!name) {
+    alert('Veuillez entrer un nom pour l\'image')
+    return
+  }
+  
+  if (savedImages[name]) {
+    if (!confirm(`Une image nommée "${name}" existe déjà. Voulez-vous la remplacer ?`)) {
+      return
+    }
+  }
+  
+  const fileExtension = file.name.split('.').pop().toLowerCase()
+  const supportedTypes = ['png', 'jpg', 'jpeg', 'gif', 'svg']
+  
+  if (!supportedTypes.includes(fileExtension)) {
+    alert('Type de fichier non supporté. Formats acceptés: PNG, JPG, GIF, SVG')
+    return
+  }
+  
+  saveImageToIndexedDB(name, file, fileExtension).then(() => {
+    savedImages[name] = {
+      name: name,
+      type: fileExtension,
+      data: file,
+      size: file.size,
+      lastModified: file.lastModified
+    }
+    
+    updateImagesList()
+    imageNameInput.value = ''
+    imageFileInput.value = ''
+    
+    showDataStatus(`✅ Image "${name}" uploadée avec succès`, 'success')
+  }).catch(e => {
+    console.error('Erreur upload image:', e)
+    showDataStatus(`❌ Erreur upload image: ${e.message}`, 'error')
+  })
+}
+
+// Mettre à jour la liste des images
+function updateImagesList() {
+  if (!imagesList) return
+  
+  const imageNames = Object.keys(savedImages)
+  
+  if (imageNames.length === 0) {
+    imagesList.innerHTML = '<p style="color: #666; font-style: italic;">Aucune image uploadée</p>'
+    return
+  }
+  
+  imagesList.innerHTML = imageNames.map(name => {
+    const image = savedImages[name]
+    const iconClass = getFileIconClass(image.type)
+    const sizeKB = Math.round(image.size / 1024)
+    
+    return `
+      <div class="model-item" onclick="viewImage('${name}')">
+        <span class="file-icon ${iconClass}"></span>
+        <span class="model-name">${name} (${sizeKB} KB)</span>
+        <div class="model-actions">
+          <button class="view-svg" onclick="event.stopPropagation(); openImageInNewTab('${name}')" title="Ouvrir dans un nouvel onglet">👁️</button>
+          <button class="download-svg" onclick="event.stopPropagation(); downloadImage('${name}')" title="Télécharger l'image">💾</button>
+          <button class="delete-model" onclick="event.stopPropagation(); deleteImage('${name}')" title="Supprimer l'image">🗑️</button>
+        </div>
+      </div>
+    `
+  }).join('')
+}
+
+// Obtenir la classe CSS pour l'icône de fichier
+function getFileIconClass(type) {
+  switch(type.toLowerCase()) {
+    case 'png': return 'png'
+    case 'jpg':
+    case 'jpeg': return 'jpg'
+    case 'gif': return 'gif'
+    case 'svg': return 'svg'
+    case 'txt': return 'txt'
+    default: return 'txt'
+  }
+}
+
+// Voir une image dans la zone SVG
+function viewImage(name) {
+  const image = savedImages[name]
+  if (!image) return
+  
+  // Charger l'image dans la zone de visualisation SVG
+  loadImageInSVGArea(image, name)
+  
+  // Mettre à jour le titre
+  updateSVGTitle('images', name)
+  
+  console.log('Image chargée dans la zone SVG:', name)
+}
+
+// Ouvrir une image dans un nouvel onglet
+function openImageInNewTab(name) {
+  const image = savedImages[name]
+  if (!image) return
+  
+  const blob = new Blob([image.data], { type: `image/${image.type}` })
+  const url = URL.createObjectURL(blob)
+  
+  const newWindow = window.open(url, '_blank')
+  if (newWindow) {
+    newWindow.document.title = `Image: ${name}`
+  }
+}
+
+// Télécharger une image
+function downloadImage(name) {
+  const image = savedImages[name]
+  if (!image) return
+  
+  const blob = new Blob([image.data], { type: `image/${image.type}` })
+  const url = URL.createObjectURL(blob)
+  
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${name}.${image.type}`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// Supprimer une image
+function deleteImage(name) {
+  if (!confirm(`Êtes-vous sûr de vouloir supprimer l'image "${name}" ?`)) {
+    return
+  }
+  
+  deleteImageFromIndexedDB(name).then(() => {
+    delete savedImages[name]
+    updateImagesList()
+    console.log('Image supprimée:', name)
+  }).catch(e => {
+    console.error('Erreur suppression image:', e)
+    showDataStatus(`❌ Erreur suppression image: ${e.message}`, 'error')
+  })
+}
+
+// ===== FONCTIONS GESTION TEXTES =====
+
+// Initialiser la gestion des textes
+function initTextsManagement() {
+  textFileInput = document.getElementById('textFileInput')
+  textNameInput = document.getElementById('textNameInput')
+  uploadTextButton = document.getElementById('uploadTextButton')
+  textsList = document.getElementById('textsList')
+  
+  if (!textFileInput || !textNameInput || !uploadTextButton || !textsList) {
+    console.error('Éléments de gestion des textes non trouvés')
+    return
+  }
+  
+  // Événements
+  uploadTextButton.addEventListener('click', uploadText)
+  
+  // Charger les textes sauvegardés
+  loadTextsFromIndexedDB().then(() => {
+    updateTextsList()
+  }).catch(e => {
+    console.error('Erreur chargement textes:', e)
+    savedTexts = {}
+  })
+}
+
+// Uploader un texte
+function uploadText() {
+  const file = textFileInput.files[0]
+  const name = textNameInput.value.trim()
+  
+  if (!file) {
+    alert('Veuillez sélectionner un fichier texte')
+    return
+  }
+  
+  if (!name) {
+    alert('Veuillez entrer un nom pour le texte')
+    return
+  }
+  
+  if (savedTexts[name]) {
+    if (!confirm(`Un texte nommé "${name}" existe déjà. Voulez-vous le remplacer ?`)) {
+      return
+    }
+  }
+  
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const content = e.target.result
+    
+    saveTextToIndexedDB(name, content, 'txt').then(() => {
+      savedTexts[name] = {
+        name: name,
+        type: 'txt',
+        content: content,
+        size: content.length,
+        lastModified: Date.now()
+      }
+      
+      updateTextsList()
+      textNameInput.value = ''
+      textFileInput.value = ''
+      
+      showDataStatus(`✅ Texte "${name}" uploadé avec succès`, 'success')
+    }).catch(e => {
+      console.error('Erreur upload texte:', e)
+      showDataStatus(`❌ Erreur upload texte: ${e.message}`, 'error')
+    })
+  }
+  
+  reader.readAsText(file, 'UTF-8')
+}
+
+// Mettre à jour la liste des textes
+function updateTextsList() {
+  if (!textsList) return
+  
+  const textNames = Object.keys(savedTexts)
+  
+  if (textNames.length === 0) {
+    textsList.innerHTML = '<p style="color: #666; font-style: italic;">Aucun texte uploadé</p>'
+    return
+  }
+  
+  textsList.innerHTML = textNames.map(name => {
+    const text = savedTexts[name]
+    const iconClass = getFileIconClass(text.type)
+    const sizeKB = Math.round(text.size / 1024)
+    const preview = text.content.substring(0, 50) + (text.content.length > 50 ? '...' : '')
+    
+    return `
+      <div class="model-item" onclick="viewText('${name}')">
+        <span class="file-icon ${iconClass}"></span>
+        <span class="model-name">${name} (${sizeKB} KB) - ${preview}</span>
+        <div class="model-actions">
+          <button class="view-svg" onclick="event.stopPropagation(); openTextInNewTab('${name}')" title="Ouvrir dans un nouvel onglet">👁️</button>
+          <button class="download-svg" onclick="event.stopPropagation(); downloadText('${name}')" title="Télécharger le texte">💾</button>
+          <button class="delete-model" onclick="event.stopPropagation(); deleteText('${name}')" title="Supprimer le texte">🗑️</button>
+        </div>
+      </div>
+    `
+  }).join('')
+}
+
+// Voir un texte dans la zone SVG
+function viewText(name) {
+  const text = savedTexts[name]
+  if (!text) return
+  
+  // Charger le texte dans la zone de visualisation SVG
+  loadTextInSVGArea(text, name)
+  
+  // Mettre à jour le titre
+  updateSVGTitle('texts', name)
+  
+  console.log('Texte chargé dans la zone SVG:', name)
+}
+
+// Ouvrir un texte dans un nouvel onglet
+function openTextInNewTab(name) {
+  const text = savedTexts[name]
+  if (!text) return
+  
+  const newWindow = window.open('', '_blank')
+  if (newWindow) {
+    newWindow.document.title = `Texte: ${name}`
+    newWindow.document.body.innerHTML = `
+      <div style="padding: 20px; font-family: monospace; white-space: pre-wrap; background: #f5f5f5;">
+        <h2>${name}</h2>
+        <hr>
+        ${text.content}
+      </div>
+    `
+  }
+}
+
+// Télécharger un texte
+function downloadText(name) {
+  const text = savedTexts[name]
+  if (!text) return
+  
+  const blob = new Blob([text.content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${name}.txt`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// Supprimer un texte
+function deleteText(name) {
+  if (!confirm(`Êtes-vous sûr de vouloir supprimer le texte "${name}" ?`)) {
+    return
+  }
+  
+  deleteTextFromIndexedDB(name).then(() => {
+    delete savedTexts[name]
+    updateTextsList()
+    console.log('Texte supprimé:', name)
+  }).catch(e => {
+    console.error('Erreur suppression texte:', e)
+    showDataStatus(`❌ Erreur suppression texte: ${e.message}`, 'error')
+  })
 }
 
 // Exposer les fonctions globalement pour les événements onclick
@@ -1110,4 +2174,12 @@ window.deleteGeneratedCard = deleteGeneratedCard
 window.loadSheet = loadSheet
 window.deleteSheet = deleteSheet
 window.updateSheetCard = updateSheetCard
+window.viewImage = viewImage
+window.openImageInNewTab = openImageInNewTab
+window.downloadImage = downloadImage
+window.deleteImage = deleteImage
+window.viewText = viewText
+window.openTextInNewTab = openTextInNewTab
+window.downloadText = downloadText
+window.deleteText = deleteText
 

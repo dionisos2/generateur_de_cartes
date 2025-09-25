@@ -111,6 +111,40 @@
                 background: #cc0000;
             }
             
+            /* Icônes de types de fichiers */
+            .file-icon {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                margin-right: 5px;
+                vertical-align: middle;
+            }
+            
+            .file-icon.png {
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff6b35"><rect x="3" y="3" width="18" height="18" rx="2" fill="%23ff6b35"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-family="Arial">PNG</text></svg>') no-repeat center;
+                background-size: contain;
+            }
+            
+            .file-icon.jpg, .file-icon.jpeg {
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234caf50"><rect x="3" y="3" width="18" height="18" rx="2" fill="%234caf50"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-family="Arial">JPG</text></svg>') no-repeat center;
+                background-size: contain;
+            }
+            
+            .file-icon.gif {
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff9800"><rect x="3" y="3" width="18" height="18" rx="2" fill="%23ff9800"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-family="Arial">GIF</text></svg>') no-repeat center;
+                background-size: contain;
+            }
+            
+            .file-icon.svg {
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232196f3"><rect x="3" y="3" width="18" height="18" rx="2" fill="%232196f3"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-family="Arial">SVG</text></svg>') no-repeat center;
+                background-size: contain;
+            }
+            
+            .file-icon.txt {
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23607d8b"><rect x="3" y="3" width="18" height="18" rx="2" fill="%23607d8b"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-family="Arial">TXT</text></svg>') no-repeat center;
+                background-size: contain;
+            }
+            
             .sheet-card {
                 border: 1px solid #ddd;
                 background: white;
@@ -133,13 +167,138 @@
                 border: 1px solid #ccc;
                 border-radius: 3px;
             }
+            
+            /* Styles pour la zone de redimensionnement */
+            #resizeHandle {
+                transition: background-color 0.2s ease;
+            }
+            
+            #resizeHandle:hover {
+                background: #bbb;
+            }
+            
+            #resizeHandle:active {
+                background: #999;
+            }
+            
+            #resizeHandle.dragging {
+                background: #666;
+            }
+            
+            #resizeHandle.dragging > div {
+                background: #fff;
+            }
+            
+            /* Styles pour les iframes */
+            #calcPage {
+                width: 100% !important;
+                min-height: 100px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+            
+            /* Styles pour la zone SVG avec scrollbars */
+            #svgContainer {
+                position: relative;
+                background: #f9f9f9;
+            }
+            
+            #svgPage {
+                width: 100% !important;
+                height: 100% !important;
+                min-width: 500px;
+                min-height: 800px;
+                border: none;
+                display: block;
+            }
+            
+            /* Styles personnalisés pour les scrollbars */
+            #svgContainer::-webkit-scrollbar {
+                width: 12px;
+                height: 12px;
+            }
+            
+            #svgContainer::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 6px;
+            }
+            
+            #svgContainer::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 6px;
+                border: 2px solid #f1f1f1;
+            }
+            
+            #svgContainer::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+            
+            #svgContainer::-webkit-scrollbar-corner {
+                background: #f1f1f1;
+            }
+            
+            /* Styles pour les contrôles de zoom intégrés */
+            #zoomControls {
+                background: rgba(255,255,255,0.8) !important;
+                border: 1px solid #ccc !important;
+                border-radius: 4px !important;
+                padding: 4px 8px !important;
+                transition: all 0.2s ease;
+            }
+            
+            #zoomControls:hover {
+                background: rgba(255,255,255,0.95) !important;
+                border-color: #999 !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            }
+            
+            #zoomControls button {
+                transition: all 0.2s ease;
+                font-size: 12px;
+                font-weight: bold;
+                min-width: 24px;
+                height: 24px;
+                padding: 2px 6px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                background: white;
+                cursor: pointer;
+            }
+            
+            #zoomControls button:hover {
+                background: #f0f0f0;
+                border-color: #999;
+                transform: translateY(-1px);
+            }
+            
+            #zoomControls button:active {
+                background: #e0e0e0;
+                transform: scale(0.95);
+            }
+            
+            #zoomLevel {
+                color: #333;
+                font-family: monospace;
+                font-size: 11px;
+                font-weight: bold;
+                min-width: 35px;
+                text-align: center;
+                padding: 0 2px;
+            }
+            
+            /* Responsive design pour les colonnes */
+            @media (max-width: 768px) {
+                #leftColumn, #rightColumn {
+                    min-width: 150px !important;
+                }
+            }
         </style>
     </head>
     <body >
         <noscript>Your browser does not support JavaScript!</noscript>
-	      <div style="display: flex; gap: 10px;">
-            <div style="flex: 0 0 calc(50% - 5px);">
-                <iframe id="calcPage" src="" width="100%" height="600" frameborder=0> </iframe>
+       <div style="display: flex; gap: 0px;">
+           <div id="leftColumn" style="flex: 0 0 40%; min-width: 200px; max-width: calc(100% - 200px);">
+                <iframe id="calcPage" src="" width="100%" height="500" frameborder=0 style="min-height: 100px;"> </iframe>
                 
                 <div style="margin-top: 10px; overflow: hidden; width: 100%;">
                     <h3>Configuration Framacalc</h3>
@@ -154,23 +313,40 @@
                     </p>
                     
                 </div>
-            </div>
-            <div style="flex: 0 0 calc(50% - 5px);">
+           </div>
+           
+           <!-- Zone de redimensionnement -->
+           <div id="resizeHandle" style="width: 10px; background: #ddd; cursor: col-resize; display: flex; align-items: center; justify-content: center; position: relative; user-select: none;">
+               <div style="width: 2px; height: 30px; background: #999; border-radius: 1px;"></div>
+           </div>
+           
+           <div id="rightColumn" style="flex: 0 0 60%; min-width: 200px; max-width: calc(100% - 200px);">
                 <!-- Système d'onglets au-dessus du SVG -->
                 <div class="tabs-container">
                     <div class="tabs-header">
                         <button class="tab-button active" data-tab="models">Modèles de cartes</button>
                         <button class="tab-button" data-tab="generation">Génération</button>
                         <button class="tab-button" data-tab="sheet">Planche de cartes</button>
+                        <button class="tab-button" data-tab="images">Images sources</button>
+                        <button class="tab-button" data-tab="texts">Textes sources</button>
                     </div>
                     
-                    <!-- Titre du SVG -->
-                    <div id="svgTitle" style="text-align: center; font-weight: bold; font-size: 16px; padding: 10px; background: #f0f0f0; border: 1px solid #ddd;">
-                        Modèle : Aucun
-                    </div>
+                   <!-- Titre du SVG avec contrôles de zoom -->
+                   <div id="svgTitle" style="display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; padding: 10px; background: #f0f0f0; border: 1px solid #ddd;">
+                       <span id="svgTitleText">Modèle : Aucun</span>
+                       <!-- Interface de zoom -->
+                       <div id="zoomControls" style="display: flex; gap: 5px; align-items: center; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc;">
+                           <button id="zoomOut" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer; font-size: 12px;" title="Dézoomer">−</button>
+                           <span id="zoomLevel" style="font-size: 11px; min-width: 35px; text-align: center; font-weight: bold; font-family: monospace;">100%</span>
+                           <button id="zoomIn" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer; font-size: 12px;" title="Zoomer">+</button>
+                           <button id="zoomReset" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer; font-size: 12px;" title="Réinitialiser le zoom">⌂</button>
+                       </div>
+                   </div>
                     
-                    <!-- Zone SVG principale -->
-                    <iframe id="svgPage" src="about:blank" width="100%" height="500" frameborder=0> </iframe>
+                   <!-- Zone SVG principale avec scrollbars -->
+                   <div id="svgContainer" style="width: 100%; height: 500px; min-width: 500px; min-height: 500px; overflow: auto; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+                       <iframe id="svgPage" src="about:blank" width="100%" height="100%" frameborder=0 style="min-width: 500px; min-height: 500px;"> </iframe>
+                   </div>
                 </div>
                 
                 <!-- Contenu des onglets sous le SVG -->
@@ -262,6 +438,52 @@
                             <h4>Planches sauvegardées :</h4>
                             <div id="sheetsList" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
                                 <p style="color: #666; font-style: italic;">Aucune planche sauvegardée</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Images sources -->
+                    <div id="images-tab" class="tab-content">
+                        <h3>Images Sources</h3>
+                        
+                        <!-- Zone d'upload d'images -->
+                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
+                            <h4>Uploader une image :</h4>
+                            <input type="file" id="imageFileInput" accept="image/*" style="margin-bottom: 10px;" />
+                            <br>
+                            <label for="imageNameInput">Nom de l'image :</label><br>
+                            <input type="text" id="imageNameInput" placeholder="Entrez un nom pour l'image" style="width: 200px; margin-right: 10px;" />
+                            <button id="uploadImageButton" type="button">UPLOADER L'IMAGE</button>
+                        </div>
+                        
+                        <!-- Liste des images uploadées -->
+                        <div>
+                            <h4>Images uploadées :</h4>
+                            <div id="imagesList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+                                <p style="color: #666; font-style: italic;">Aucune image uploadée</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Textes sources -->
+                    <div id="texts-tab" class="tab-content">
+                        <h3>Textes Sources</h3>
+                        
+                        <!-- Zone d'upload de textes -->
+                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
+                            <h4>Uploader un fichier texte :</h4>
+                            <input type="file" id="textFileInput" accept=".txt" style="margin-bottom: 10px;" />
+                            <br>
+                            <label for="textNameInput">Nom du texte :</label><br>
+                            <input type="text" id="textNameInput" placeholder="Entrez un nom pour le texte" style="width: 200px; margin-right: 10px;" />
+                            <button id="uploadTextButton" type="button">UPLOADER LE TEXTE</button>
+                        </div>
+                        
+                        <!-- Liste des textes uploadés -->
+                        <div>
+                            <h4>Textes uploadés :</h4>
+                            <div id="textsList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+                                <p style="color: #666; font-style: italic;">Aucun texte uploadé</p>
                             </div>
                         </div>
                     </div>
