@@ -298,9 +298,8 @@
         <noscript>Your browser does not support JavaScript!</noscript>
        <div style="display: flex; gap: 0px;">
            <div id="leftColumn" style="flex: 0 0 40%; min-width: 200px; max-width: calc(100% - 200px);">
-                <iframe id="calcPage" src="" width="100%" height="500" frameborder=0 style="min-height: 100px;"> </iframe>
-                
-                <div style="margin-top: 10px; overflow: hidden; width: 100%;">
+                <!-- Configuration Framacalc au-dessus de l'iframe -->
+                <div style="margin-bottom: 10px; overflow: hidden; width: 100%;">
                     <h3>Configuration Framacalc</h3>
                     <p>
                         <label for="framacalcUrlTextBox">Copiez ici l'adresse de votre Framacalc :</label><br>
@@ -311,8 +310,9 @@
                         <button id="reloadDataButton" type="button" title="Recharger les données de la feuille">🔄 RECHARGER DONNÉES</button>
                         <button id="CSVbutton" type="button" disabled title="Fonctionnalité à venir">SAUVEGARDER CSV DANS UN FICHIER</button>
                     </p>
-                    
                 </div>
+                
+                <iframe id="calcPage" src="" width="100%" height="500" frameborder=0 style="min-height: 100px;"> </iframe>
            </div>
            
            <!-- Zone de redimensionnement -->
@@ -325,10 +325,10 @@
                 <div class="tabs-container">
                     <div class="tabs-header">
                         <button class="tab-button active" data-tab="models">Modèles de cartes</button>
-                        <button class="tab-button" data-tab="generation">Génération</button>
-                        <button class="tab-button" data-tab="sheet">Planche de cartes</button>
                         <button class="tab-button" data-tab="images">Images sources</button>
                         <button class="tab-button" data-tab="texts">Textes sources</button>
+                        <button class="tab-button" data-tab="generation">Génération</button>
+                        <button class="tab-button" data-tab="sheet">Planche de cartes</button>
                     </div>
                     
                    <!-- Titre du SVG avec contrôles de zoom -->
@@ -343,9 +343,11 @@
                        </div>
                    </div>
                     
-                   <!-- Zone SVG principale avec scrollbars -->
-                   <div id="svgContainer" style="width: 100%; height: 500px; min-width: 500px; min-height: 500px; overflow: auto; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
-                       <iframe id="svgPage" src="about:blank" width="100%" height="100%" frameborder=0 style="min-width: 500px; min-height: 500px;"> </iframe>
+                   <!-- Zone de contenu principale avec scrollbars -->
+                   <div id="svgContainer" style="width: 100%; height: 500px; min-width: 500px; min-height: 500px; overflow: auto; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; position: relative;">
+                       <div id="contentDisplay" style="width: 100%; height: 100%; min-width: 500px; min-height: 500px; display: flex; justify-content: center; align-items: center; background: #f5f5f5;">
+                           <!-- Le contenu sera chargé ici directement -->
+                       </div>
                    </div>
                 </div>
                 
@@ -382,6 +384,52 @@
                             Ou sélectionnez un fichier SVG local :
                             <input type="file" id="svgFileInput" accept=".svg" />
                             <button id="loadSVGButton" type="button">CHARGER SVG DEPUIS LE FICHIER</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Images sources -->
+                    <div id="images-tab" class="tab-content">
+                        <h3>Images Sources</h3>
+                        
+                        <!-- Zone d'upload d'images -->
+                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
+                            <h4>Uploader une image :</h4>
+                            <input type="file" id="imageFileInput" accept="image/*" style="margin-bottom: 10px;" />
+                            <br>
+                            <label for="imageNameInput">Nom de l'image :</label><br>
+                            <input type="text" id="imageNameInput" placeholder="Entrez un nom pour l'image" style="width: 200px; margin-right: 10px;" />
+                            <button id="uploadImageButton" type="button">UPLOADER L'IMAGE</button>
+                        </div>
+                        
+                        <!-- Liste des images uploadées -->
+                        <div>
+                            <h4>Images uploadées :</h4>
+                            <div id="imagesList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+                                <p style="color: #666; font-style: italic;">Aucune image uploadée</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Textes sources -->
+                    <div id="texts-tab" class="tab-content">
+                        <h3>Textes Sources</h3>
+                        
+                        <!-- Zone d'upload de textes -->
+                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
+                            <h4>Uploader un fichier texte :</h4>
+                            <input type="file" id="textFileInput" accept=".txt" style="margin-bottom: 10px;" />
+                            <br>
+                            <label for="textNameInput">Nom du texte :</label><br>
+                            <input type="text" id="textNameInput" placeholder="Entrez un nom pour le texte" style="width: 200px; margin-right: 10px;" />
+                            <button id="uploadTextButton" type="button">UPLOADER LE TEXTE</button>
+                        </div>
+                        
+                        <!-- Liste des textes uploadés -->
+                        <div>
+                            <h4>Textes uploadés :</h4>
+                            <div id="textsList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+                                <p style="color: #666; font-style: italic;">Aucun texte uploadé</p>
+                            </div>
                         </div>
                     </div>
                     
@@ -438,52 +486,6 @@
                             <h4>Planches sauvegardées :</h4>
                             <div id="sheetsList" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
                                 <p style="color: #666; font-style: italic;">Aucune planche sauvegardée</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Onglet Images sources -->
-                    <div id="images-tab" class="tab-content">
-                        <h3>Images Sources</h3>
-                        
-                        <!-- Zone d'upload d'images -->
-                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
-                            <h4>Uploader une image :</h4>
-                            <input type="file" id="imageFileInput" accept="image/*" style="margin-bottom: 10px;" />
-                            <br>
-                            <label for="imageNameInput">Nom de l'image :</label><br>
-                            <input type="text" id="imageNameInput" placeholder="Entrez un nom pour l'image" style="width: 200px; margin-right: 10px;" />
-                            <button id="uploadImageButton" type="button">UPLOADER L'IMAGE</button>
-                        </div>
-                        
-                        <!-- Liste des images uploadées -->
-                        <div>
-                            <h4>Images uploadées :</h4>
-                            <div id="imagesList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
-                                <p style="color: #666; font-style: italic;">Aucune image uploadée</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Onglet Textes sources -->
-                    <div id="texts-tab" class="tab-content">
-                        <h3>Textes Sources</h3>
-                        
-                        <!-- Zone d'upload de textes -->
-                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
-                            <h4>Uploader un fichier texte :</h4>
-                            <input type="file" id="textFileInput" accept=".txt" style="margin-bottom: 10px;" />
-                            <br>
-                            <label for="textNameInput">Nom du texte :</label><br>
-                            <input type="text" id="textNameInput" placeholder="Entrez un nom pour le texte" style="width: 200px; margin-right: 10px;" />
-                            <button id="uploadTextButton" type="button">UPLOADER LE TEXTE</button>
-                        </div>
-                        
-                        <!-- Liste des textes uploadés -->
-                        <div>
-                            <h4>Textes uploadés :</h4>
-                            <div id="textsList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
-                                <p style="color: #666; font-style: italic;">Aucun texte uploadé</p>
                             </div>
                         </div>
                     </div>

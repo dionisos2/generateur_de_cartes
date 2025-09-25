@@ -38,6 +38,8 @@ var savedSheets = {} // Stockage des planches sauvegardées
 var currentSheet = new Array(9).fill(null) // Planche actuelle (9 cartes)
 var currentModel = null // Modèle actuellement affiché
 var currentCard = null // Carte actuellement affichée
+var currentImage = null // Image actuellement affichée
+var currentText = null // Texte actuellement affiché
 
 // Variables pour les images sources
 var imageFileInput
@@ -140,7 +142,7 @@ function initForm () {
 
   var validateCalcButton = document.getElementById('validateCalcButton')
   if (validateCalcButton) {
-    validateCalcButton.addEventListener('click', validateCalcButtonCallback)
+  validateCalcButton.addEventListener('click', validateCalcButtonCallback)
   } else {
     console.error('validateCalcButton not found')
   }
@@ -246,58 +248,32 @@ export function main () {
   window.deleteGeneratedCard = deleteGeneratedCard
 }
 
-// Fonction pour charger un SVG dans l'iframe
+// Fonction pour charger un SVG directement dans le conteneur
 function loadSVGInIframe(svgContent) {
-  const iframe = document.getElementById('svgPage')
-  if (!iframe) {
-    console.error('SVG iframe not found')
+  const contentDisplay = document.getElementById('contentDisplay')
+  const container = document.getElementById('svgContainer')
+  if (!contentDisplay || !container) {
+    console.error('Éléments de contenu non trouvés')
     return
   }
   
-  // Créer un document HTML avec le SVG
+  // Créer le contenu HTML directement
   const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>SVG Viewer</title>
-        <style>
-            body {
-                margin: 0;
-                padding: 10px;
-                background: #f0f0f0;
-                font-family: Arial, sans-serif;
-            }
-            .svg-container {
-                background: white;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                padding: 10px;
-                text-align: center;
-            }
-            svg {
-                max-width: 100%;
-                max-height: 100%;
-                border: 1px solid #ddd;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="svg-container">
-            ${svgContent}
-        </div>
-    </body>
-    </html>
+    <div class="svg-container" style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 100%; max-height: 100%;">
+      ${svgContent}
+    </div>
   `
   
-  // Écrire le contenu dans l'iframe
-  const iframeDoc = iframe.contentDocument || iframe.contentWindow.document
-  iframeDoc.open()
-  iframeDoc.write(htmlContent)
-  iframeDoc.close()
+  // Charger le contenu directement
+  contentDisplay.innerHTML = htmlContent
+  
+  // Centrer le contenu après chargement
+  setTimeout(() => {
+    centerContentInContainer(container)
+  }, 100)
   
   currentSVGContent = svgContent
-  console.log('SVG loaded in iframe')
+  console.log('SVG chargé directement dans le conteneur')
 }
 
 // Gestionnaire pour la sélection de fichier SVG
@@ -358,31 +334,56 @@ function initTabs() {
 }
 
 function switchTabContent(tabName) {
-  const svgTitle = document.getElementById('svgTitle')
+  const svgTitleText = document.getElementById('svgTitleText')
+  if (!svgTitleText) return
   
   switch(tabName) {
     case 'models':
       if (currentModel && savedModels[currentModel]) {
         loadSVGInIframe(savedModels[currentModel])
-        svgTitle.textContent = `Modèle : ${currentModel}`
+        svgTitleText.textContent = `Modèle : ${currentModel}`
       } else {
-        svgTitle.textContent = 'Modèle : Aucun'
+        svgTitleText.textContent = 'Modèle : Aucun'
         loadSVGInIframe('')
       }
       break
     case 'generation':
       if (currentCard && generatedCards[currentCard]) {
-        loadSVGInIframe(generatedCards[currentCard])
-        svgTitle.textContent = `Carte : ${currentCard}`
+        // Gérer les objets complexes dans generatedCards
+        const cardData = generatedCards[currentCard]
+        const svgContent = typeof cardData === 'string' ? cardData : cardData.svgContent
+        loadSVGInIframe(svgContent)
+        svgTitleText.textContent = `Carte : ${currentCard}`
       } else {
-        svgTitle.textContent = 'Carte : Aucune'
+        svgTitleText.textContent = 'Carte : Aucune'
         loadSVGInIframe('')
       }
       break
     case 'sheet':
-      svgTitle.textContent = 'Planche de cartes'
+      svgTitleText.textContent = 'Planche de cartes'
       loadSVGInIframe('')
       break
+    case 'images':
+      if (currentImage && savedImages[currentImage]) {
+        loadImageInSVGArea(savedImages[currentImage], currentImage)
+        svgTitleText.textContent = `Image : ${currentImage}`
+      } else {
+        svgTitleText.textContent = 'Image : Aucune'
+        loadSVGInIframe('')
+      }
+      break
+    case 'texts':
+      if (currentText && savedTexts[currentText]) {
+        loadTextInSVGArea(savedTexts[currentText], currentText)
+        svgTitleText.textContent = `Texte : ${currentText}`
+      } else {
+        svgTitleText.textContent = 'Texte : Aucun'
+        loadSVGInIframe('')
+      }
+      break
+    default:
+      svgTitleText.textContent = 'Aucun contenu sélectionné'
+      loadSVGInIframe('')
   }
 }
 
@@ -1542,10 +1543,10 @@ function initZoomControls() {
   
   // Fonction pour appliquer le zoom
   function applyZoom() {
-    const iframe = svgContainer.querySelector('iframe')
-    if (iframe) {
-      iframe.style.transform = `scale(${currentZoomLevel})`
-      iframe.style.transformOrigin = 'top left'
+    const contentDisplay = svgContainer.querySelector('#contentDisplay')
+    if (contentDisplay) {
+      contentDisplay.style.transform = `scale(${currentZoomLevel})`
+      contentDisplay.style.transformOrigin = 'center center'
       
       // Ajuster la taille du conteneur pour le zoom
       const containerWidth = svgContainer.clientWidth
@@ -1553,10 +1554,10 @@ function initZoomControls() {
       
       // Calculer les nouvelles dimensions
       const newWidth = Math.max(500, containerWidth * currentZoomLevel)
-      const newHeight = Math.max(800, containerHeight * currentZoomLevel)
+      const newHeight = Math.max(500, containerHeight * currentZoomLevel)
       
-      iframe.style.width = newWidth + 'px'
-      iframe.style.height = newHeight + 'px'
+      contentDisplay.style.width = newWidth + 'px'
+      contentDisplay.style.height = newHeight + 'px'
       
       // Centrer le contenu après zoom
       setTimeout(() => {
@@ -1680,10 +1681,10 @@ function resizeIframeToContent(iframe) {
 
 // Charger une image dans la zone SVG
 function loadImageInSVGArea(image, name) {
-  const iframe = document.getElementById('svgPage')
+  const contentDisplay = document.getElementById('contentDisplay')
   const container = document.getElementById('svgContainer')
-  if (!iframe || !container) {
-    console.error('Éléments SVG non trouvés')
+  if (!contentDisplay || !container) {
+    console.error('Éléments de contenu non trouvés')
     return
   }
   
@@ -1691,57 +1692,19 @@ function loadImageInSVGArea(image, name) {
   const blob = new Blob([image.data], { type: `image/${image.type}` })
   const imageUrl = URL.createObjectURL(blob)
   
-  // Créer le contenu HTML avec l'image
+  // Créer le contenu HTML directement
   const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Image: ${name}</title>
-      <style>
-        body {
-          margin: 0;
-          padding: 20px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 800px;
-          min-width: 500px;
-          background: #f5f5f5;
-        }
-        .image-container {
-          max-width: 100%;
-          max-height: 100%;
-          text-align: center;
-        }
-        .image-container img {
-          max-width: 100%;
-          max-height: 100%;
-          object-fit: contain;
-          border: 2px solid #ddd;
-          border-radius: 8px;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .image-info {
-          margin-top: 10px;
-          color: #666;
-          font-family: Arial, sans-serif;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="image-container">
-        <img src="${imageUrl}" alt="${name}" />
-        <div class="image-info">
-          <strong>${name}</strong><br>
-          Type: ${image.type.toUpperCase()} | Taille: ${Math.round(image.size / 1024)} KB
-        </div>
+    <div class="image-container" style="max-width: 100%; max-height: 100%; text-align: center;">
+      <img src="${imageUrl}" alt="${name}" style="max-width: 100%; max-height: 100%; object-fit: contain; border: 2px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+      <div class="image-info" style="margin-top: 10px; color: #666; font-family: Arial, sans-serif;">
+        <strong>${name}</strong><br>
+        Type: ${image.type.toUpperCase()} | Taille: ${Math.round(image.size / 1024)} KB
       </div>
-    </body>
-    </html>
+    </div>
   `
   
-  // Charger le contenu dans l'iframe
-  iframe.srcdoc = htmlContent
+  // Charger le contenu directement
+  contentDisplay.innerHTML = htmlContent
   
   // Centrer le contenu après chargement
   setTimeout(() => {
@@ -1751,65 +1714,26 @@ function loadImageInSVGArea(image, name) {
 
 // Charger un texte dans la zone SVG
 function loadTextInSVGArea(text, name) {
-  const iframe = document.getElementById('svgPage')
+  const contentDisplay = document.getElementById('contentDisplay')
   const container = document.getElementById('svgContainer')
-  if (!iframe || !container) {
-    console.error('Éléments SVG non trouvés')
+  if (!contentDisplay || !container) {
+    console.error('Éléments de contenu non trouvés')
     return
   }
   
-  // Créer le contenu HTML avec le texte
+  // Créer le contenu HTML directement
   const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Texte: ${name}</title>
-      <style>
-        body {
-          margin: 0;
-          padding: 20px;
-          background: #f5f5f5;
-          font-family: 'Courier New', monospace;
-          min-height: 800px;
-          min-width: 500px;
-        }
-        .text-container {
-          max-width: 100%;
-          background: white;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          white-space: pre-wrap;
-          word-wrap: break-word;
-          overflow-x: auto;
-        }
-        .text-info {
-          margin-bottom: 15px;
-          padding-bottom: 10px;
-          border-bottom: 1px solid #ddd;
-          color: #666;
-          font-family: Arial, sans-serif;
-        }
-        .text-content {
-          line-height: 1.6;
-          color: #333;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="text-container">
-        <div class="text-info">
-          <strong>${name}</strong><br>
-          Type: ${text.type.toUpperCase()} | Taille: ${Math.round(text.size / 1024)} KB
-        </div>
-        <div class="text-content">${text.content}</div>
+    <div class="text-container" style="max-width: 100%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); white-space: pre-wrap; word-wrap: break-word; overflow-x: auto;">
+      <div class="text-info" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd; color: #666; font-family: Arial, sans-serif;">
+        <strong>${name}</strong><br>
+        Type: ${text.type.toUpperCase()} | Taille: ${Math.round(text.size / 1024)} KB
       </div>
-    </body>
-    </html>
+      <div class="text-content" style="line-height: 1.6; color: #333; font-family: 'Courier New', monospace;">${text.content}</div>
+    </div>
   `
   
-  // Charger le contenu dans l'iframe
-  iframe.srcdoc = htmlContent
+  // Charger le contenu directement
+  contentDisplay.innerHTML = htmlContent
   
   // Centrer le contenu après chargement
   setTimeout(() => {
@@ -1939,6 +1863,9 @@ function getFileIconClass(type) {
 function viewImage(name) {
   const image = savedImages[name]
   if (!image) return
+  
+  // Mettre à jour la variable currentImage
+  currentImage = name
   
   // Charger l'image dans la zone de visualisation SVG
   loadImageInSVGArea(image, name)
@@ -2105,6 +2032,9 @@ function updateTextsList() {
 function viewText(name) {
   const text = savedTexts[name]
   if (!text) return
+  
+  // Mettre à jour la variable currentText
+  currentText = name
   
   // Charger le texte dans la zone de visualisation SVG
   loadTextInSVGArea(text, name)

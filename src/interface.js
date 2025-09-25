@@ -23,19 +23,24 @@ function activateSvg (frameCalc, frameSvg) {
 
 export default function setFrames () {
   var frameCalc
-  var frameSvg
+  var contentDisplay
 
   frameCalc = document.getElementById('calcPage')
-  frameSvg = document.getElementById('svgPage')
+  contentDisplay = document.getElementById('contentDisplay')
 
-  // Comportement de repli désactivé - les iframes gardent leur taille fixe
+  // Comportement de repli désactivé - les éléments gardent leur taille fixe
   // frameCalc.addEventListener('mouseover', function () { activateCalc(frameCalc, frameSvg) })
   // frameSvg.addEventListener('mouseover', function () { activateSvg(frameCalc, frameSvg) })
   
-  // Taille fixe pour les deux iframes - layout 50/50
-  frameCalc.width = '100%'
-  frameCalc.height = '600px'
-  frameSvg.width = '100%'
-  frameSvg.height = '600px'
+  // Taille fixe pour les éléments - layout 50/50
+  if (frameCalc) {
+    frameCalc.width = '100%'
+    frameCalc.height = '500px'
+  }
+  
+  if (contentDisplay) {
+    contentDisplay.style.width = '100%'
+    contentDisplay.style.height = '100%'
+  }
 }
 
