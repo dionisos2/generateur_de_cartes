@@ -36,6 +36,41 @@ var saveSheetButton
 var sheetsList
 var savedSheets = {} // Stockage des planches sauvegardées
 var currentSheet = new Array(9).fill(null) // Planche actuelle (9 cartes)
+
+// Template SVG pour la planche 3x3
+var sheetTemplate = `
+<svg width="300" height="450" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450">
+  <defs>
+    <style>
+      .card-slot { fill: #f8f9fa; stroke: #dee2e6; stroke-width: 2; }
+      .card-slot.empty { fill: #e9ecef; stroke: #adb5bd; stroke-dasharray: 5,5; }
+      .card-content { transform-origin: center; }
+    </style>
+  </defs>
+  
+  <!-- Grille 3x3 des cartes -->
+  <g id="sheet-grid">
+    <!-- Ligne 1 -->
+    <rect id="slot-0" class="card-slot empty" x="10" y="10" width="63" height="88" rx="4"/>
+    <rect id="slot-1" class="card-slot empty" x="90" y="10" width="63" height="88" rx="4"/>
+    <rect id="slot-2" class="card-slot empty" x="170" y="10" width="63" height="88" rx="4"/>
+    
+    <!-- Ligne 2 -->
+    <rect id="slot-3" class="card-slot empty" x="10" y="120" width="63" height="88" rx="4"/>
+    <rect id="slot-4" class="card-slot empty" x="90" y="120" width="63" height="88" rx="4"/>
+    <rect id="slot-5" class="card-slot empty" x="170" y="120" width="63" height="88" rx="4"/>
+    
+    <!-- Ligne 3 -->
+    <rect id="slot-6" class="card-slot empty" x="10" y="230" width="63" height="88" rx="4"/>
+    <rect id="slot-7" class="card-slot empty" x="90" y="230" width="63" height="88" rx="4"/>
+    <rect id="slot-8" class="card-slot empty" x="170" y="230" width="63" height="88" rx="4"/>
+  </g>
+  
+  <!-- Zone pour les cartes -->
+  <g id="cards-container">
+    <!-- Les cartes seront insérées ici dynamiquement -->
+  </g>
+</svg>`
 var currentModel = null // Modèle actuellement affiché
 var currentCard = null // Carte actuellement affichée
 var currentImage = null // Image actuellement affichée
@@ -361,7 +396,7 @@ function switchTabContent(tabName) {
       break
     case 'sheet':
       svgTitleText.textContent = 'Planche de cartes'
-      loadSVGInIframe('')
+      updateSheetDisplay()
       break
     case 'images':
       if (currentImage && savedImages[currentImage]) {
@@ -1032,7 +1067,116 @@ function updateSheetCard(index) {
     const selectedCard = selector.value
     currentSheet[index] = selectedCard || null
     console.log(`Position ${index} mise à jour avec:`, selectedCard)
+    
+    // Mettre à jour l'affichage de la planche si on est sur l'onglet sheet
+    const activeTab = document.querySelector('.tab-button.active')
+    if (activeTab && activeTab.dataset.tab === 'sheet') {
+      updateSheetDisplay()
+    }
   }
+}
+
+// Fonction pour mettre à jour l'affichage de la planche
+function updateSheetDisplay() {
+  const contentDisplay = document.getElementById('contentDisplay')
+  const container = document.getElementById('svgContainer')
+  if (!contentDisplay || !container) {
+    console.error('Éléments de contenu non trouvés')
+    return
+  }
+  
+  // Créer une copie du template
+  let sheetSVG = sheetTemplate
+  
+  // Remplacer les slots vides par des slots occupés et ajouter les cartes
+  for (let i = 0; i < 9; i++) {
+    const cardName = currentSheet[i]
+    const slotId = `slot-${i}`
+    
+    console.log(`Slot ${i}: cardName="${cardName}", slotId="${slotId}"`)
+    
+    if (cardName && generatedCards[cardName]) {
+      // Remplacer la classe "empty" par "filled"
+      sheetSVG = sheetSVG.replace(
+        `id="${slotId}" class="card-slot empty"`,
+        `id="${slotId}" class="card-slot"`
+      )
+      
+      // Récupérer le contenu SVG de la carte
+      const cardData = generatedCards[cardName]
+      const cardSVG = typeof cardData === 'string' ? cardData : cardData.svgContent
+      
+      if (cardSVG) {
+        // Extraire le contenu SVG (sans les balises <svg>)
+        const svgMatch = cardSVG.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
+        const svgContent = svgMatch ? svgMatch[1] : cardSVG
+        
+        // Calculer la position et la taille pour cette carte
+        const x = 10 + (i % 3) * 80 // Position exacte du slot
+        const y = 10 + Math.floor(i / 3) * 110 // Position exacte du slot
+        const width = 63 // Largeur exacte du slot
+        const height = 88 // Hauteur exacte du slot
+        
+        console.log(`Carte ${i} (${cardName}): position=(${x}, ${y}), dimensions=${width}x${height}`)
+        
+        // Ajouter la carte dans le conteneur
+        // Extraire les dimensions réelles du SVG
+        const widthMatch = cardSVG.match(/width="([^"]*)"/)
+        const heightMatch = cardSVG.match(/height="([^"]*)"/)
+        const viewBoxMatch = cardSVG.match(/viewBox="([^"]*)"/)
+        
+        let svgWidth = 640 // Valeur par défaut
+        let svgHeight = 480 // Valeur par défaut
+        
+        if (widthMatch && heightMatch) {
+          svgWidth = parseFloat(widthMatch[1])
+          svgHeight = parseFloat(heightMatch[1])
+        } else if (viewBoxMatch) {
+          const viewBox = viewBoxMatch[1].split(/\s+/)
+          if (viewBox.length >= 4) {
+            svgWidth = parseFloat(viewBox[2])
+            svgHeight = parseFloat(viewBox[3])
+          }
+        }
+        
+        console.log(`Dimensions SVG détectées: ${svgWidth}x${svgHeight}`)
+        
+        // Positionner et redimensionner la carte en préservant l'aspect ratio
+        const scaleX = width / svgWidth
+        const scaleY = height / svgHeight
+        const uniformScale = Math.min(scaleX, scaleY) // Utiliser le plus petit scale pour préserver l'aspect ratio
+        
+        console.log(`Scale calculé: scaleX=${scaleX}, scaleY=${scaleY}, uniformScale=${uniformScale}`)
+        
+        const cardElement = `
+          <g id="card-${i}" class="card-content" transform="translate(${x}, ${y})">
+            <g transform="scale(${uniformScale})">
+              ${svgContent}
+            </g>
+          </g>`
+        
+        // Insérer la carte avant la fermeture du conteneur
+        sheetSVG = sheetSVG.replace('</g>\n</svg>', `${cardElement}\n  </g>\n</svg>`)
+      }
+    }
+  }
+  
+  // Créer le contenu HTML avec le SVG de la planche
+  const htmlContent = `
+    <div class="sheet-container" style="max-width: 100%; max-height: 100%; text-align: center;">
+      ${sheetSVG}
+    </div>
+  `
+  
+  // Charger le contenu
+  contentDisplay.innerHTML = htmlContent
+  
+  // Centrer le contenu après chargement
+  setTimeout(() => {
+    centerContentInContainer(container)
+  }, 100)
+  
+  console.log('Planche mise à jour avec les cartes sélectionnées')
 }
 
 function saveSheet() {
@@ -1077,6 +1221,12 @@ function loadSheet(sheetName) {
       }
     }
     
+    // Mettre à jour l'affichage de la planche si on est sur l'onglet sheet
+    const activeTab = document.querySelector('.tab-button.active')
+    if (activeTab && activeTab.dataset.tab === 'sheet') {
+      updateSheetDisplay()
+    }
+    
     console.log('Planche chargée:', sheetName)
   }
 }
@@ -1101,7 +1251,11 @@ function updateSheetsList() {
   sheetsList.innerHTML = sheets.map(sheetName => `
     <div class="model-item" data-sheet="${sheetName}">
       <span class="model-name" onclick="loadSheet('${sheetName}')">${sheetName}</span>
-      <button class="delete-model" onclick="deleteSheet('${sheetName}')" title="Supprimer la planche">🗑️</button>
+      <div class="model-actions">
+        <button class="view-svg" onclick="event.stopPropagation(); viewSheet('${sheetName}')" title="Voir la planche">👁️</button>
+        <button class="download-svg" onclick="event.stopPropagation(); downloadSheet('${sheetName}')" title="Télécharger la planche">💾</button>
+        <button class="delete-model" onclick="deleteSheet('${sheetName}')" title="Supprimer la planche">🗑️</button>
+      </div>
     </div>
   `).join('')
 }
@@ -1119,6 +1273,166 @@ function loadSavedSheets() {
   }
 }
 
+// Voir une planche dans la zone SVG
+function viewSheet(sheetName) {
+  if (savedSheets[sheetName]) {
+    // Charger la planche dans currentSheet
+    currentSheet = [...savedSheets[sheetName]]
+    
+    // Mettre à jour les sélecteurs
+    for (let i = 0; i < 9; i++) {
+      const selector = document.getElementById(`sheet-selector-${i}`)
+      if (selector) {
+        const cardName = currentSheet[i]
+        selector.value = cardName || ''
+      }
+    }
+    
+    // Afficher la planche
+    updateSheetDisplay()
+    
+    // Mettre à jour le titre
+    updateSVGTitle('sheet', sheetName)
+    
+    console.log('Planche chargée dans la zone SVG:', sheetName)
+  }
+}
+
+// Ouvrir une planche dans un nouvel onglet
+function openSheetInNewTab(sheetName) {
+  if (savedSheets[sheetName]) {
+    // Créer une copie temporaire de currentSheet
+    const tempSheet = [...savedSheets[sheetName]]
+    
+    // Générer le SVG de la planche
+    let sheetSVG = sheetTemplate
+    
+    // Remplacer les slots vides par des slots occupés et ajouter les cartes
+    for (let i = 0; i < 9; i++) {
+      const cardName = tempSheet[i]
+      const slotId = `slot-${i}`
+      
+      if (cardName && generatedCards[cardName]) {
+        // Remplacer la classe "empty" par "filled"
+        sheetSVG = sheetSVG.replace(
+          `id="${slotId}" class="card-slot empty"`,
+          `id="${slotId}" class="card-slot"`
+        )
+        
+        // Récupérer le contenu SVG de la carte
+        const cardData = generatedCards[cardName]
+        const cardSVG = typeof cardData === 'string' ? cardData : cardData.svgContent
+        
+        if (cardSVG) {
+          // Extraire le contenu SVG (sans les balises <svg>)
+          const svgMatch = cardSVG.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
+          const svgContent = svgMatch ? svgMatch[1] : cardSVG
+          
+          // Calculer la position et la taille pour cette carte
+          const x = 20 + (i % 3) * 180 // Position exacte du slot
+          const y = 20 + Math.floor(i / 3) * 280 // Position exacte du slot
+          const width = 150 // Largeur exacte du slot
+          const height = 250 // Hauteur exacte du slot
+          
+        // Ajouter la carte dans le conteneur
+        // Positionner et redimensionner la carte pour remplir le slot
+        const scaleX = width / 640
+        const scaleY = height / 480
+        
+        const cardElement = `
+          <g id="card-${i}" class="card-content" transform="translate(${x}, ${y})">
+            <g transform="scale(${uniformScale})">
+              ${svgContent}
+            </g>
+          </g>`
+          
+          // Insérer la carte avant la fermeture du conteneur
+          sheetSVG = sheetSVG.replace('</g>\n</svg>', `${cardElement}\n  </g>\n</svg>`)
+        }
+      }
+    }
+    
+    // Créer un blob et ouvrir dans un nouvel onglet
+    const blob = new Blob([sheetSVG], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(blob)
+    
+    const newWindow = window.open(url, '_blank')
+    if (newWindow) {
+      newWindow.document.title = `Planche: ${sheetName}`
+    }
+  }
+}
+
+// Télécharger une planche
+function downloadSheet(sheetName) {
+  if (savedSheets[sheetName]) {
+    // Créer une copie temporaire de currentSheet
+    const tempSheet = [...savedSheets[sheetName]]
+    
+    // Générer le SVG de la planche (même logique que openSheetInNewTab)
+    let sheetSVG = sheetTemplate
+    
+    // Remplacer les slots vides par des slots occupés et ajouter les cartes
+    for (let i = 0; i < 9; i++) {
+      const cardName = tempSheet[i]
+      const slotId = `slot-${i}`
+      
+      if (cardName && generatedCards[cardName]) {
+        // Remplacer la classe "empty" par "filled"
+        sheetSVG = sheetSVG.replace(
+          `id="${slotId}" class="card-slot empty"`,
+          `id="${slotId}" class="card-slot"`
+        )
+        
+        // Récupérer le contenu SVG de la carte
+        const cardData = generatedCards[cardName]
+        const cardSVG = typeof cardData === 'string' ? cardData : cardData.svgContent
+        
+        if (cardSVG) {
+          // Extraire le contenu SVG (sans les balises <svg>)
+          const svgMatch = cardSVG.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
+          const svgContent = svgMatch ? svgMatch[1] : cardSVG
+          
+          // Calculer la position et la taille pour cette carte
+          const x = 20 + (i % 3) * 180 // Position exacte du slot
+          const y = 20 + Math.floor(i / 3) * 280 // Position exacte du slot
+          const width = 150 // Largeur exacte du slot
+          const height = 250 // Hauteur exacte du slot
+          
+        // Ajouter la carte dans le conteneur
+        // Positionner et redimensionner la carte pour remplir le slot
+        const scaleX = width / 640
+        const scaleY = height / 480
+        
+        const cardElement = `
+          <g id="card-${i}" class="card-content" transform="translate(${x}, ${y})">
+            <g transform="scale(${uniformScale})">
+              ${svgContent}
+            </g>
+          </g>`
+          
+          // Insérer la carte avant la fermeture du conteneur
+          sheetSVG = sheetSVG.replace('</g>\n</svg>', `${cardElement}\n  </g>\n</svg>`)
+        }
+      }
+    }
+    
+    // Télécharger le fichier
+    const blob = new Blob([sheetSVG], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(blob)
+    
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `planche_${sheetName}.svg`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    console.log('Planche téléchargée:', sheetName)
+  }
+}
+
 function updateSVGTitle(tabType, itemName) {
   const svgTitleText = document.getElementById('svgTitleText')
   if (!svgTitleText) return
@@ -1131,7 +1445,7 @@ function updateSVGTitle(tabType, itemName) {
       svgTitleText.textContent = `Carte : ${itemName}`
       break
     case 'sheet':
-      svgTitleText.textContent = 'Planche de cartes'
+      svgTitleText.textContent = itemName ? `Planche : ${itemName}` : 'Planche de cartes'
       break
     case 'images':
       svgTitleText.textContent = `Image : ${itemName}`
@@ -2104,6 +2418,9 @@ window.deleteGeneratedCard = deleteGeneratedCard
 window.loadSheet = loadSheet
 window.deleteSheet = deleteSheet
 window.updateSheetCard = updateSheetCard
+window.viewSheet = viewSheet
+window.openSheetInNewTab = openSheetInNewTab
+window.downloadSheet = downloadSheet
 window.viewImage = viewImage
 window.openImageInNewTab = openImageInNewTab
 window.downloadImage = downloadImage

@@ -103,3 +103,10 @@
   - [X] Réorganisation des onglets : Modèles, Images sources, Textes sources, Génération, Planches
   - [X] Remontée de l'interface de configuration Framacalc au-dessus de l'iframe
   - [X] Optimisation de l'ordre logique des fonctionnalités dans l'interface
+  - [X] Correction majeure de l'affichage des cartes dans la grille 3x3
+  - [X] Inversion de l'aspect ratio des slots (format portrait 63x88)
+  - [X] Réduction des marges autour de la grille pour un affichage plus compact
+  - [X] Correction du positionnement des cartes (séparation translate/scale)
+  - [X] Détection automatique des dimensions SVG pour un scaling correct
+  - [X] Préservation de l'aspect ratio des cartes sans déformation
+  - [X] Optimisation des dimensions de la grille (300x450 au lieu de 600x900)
