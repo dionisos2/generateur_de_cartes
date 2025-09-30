@@ -46,7 +46,7 @@ var currentSheet = new Array(9).fill(null) // Planche actuelle (9 cartes)
 
 // Template SVG pour la planche 3x3
 var sheetTemplate = `
-<svg width="300" height="450" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450">
+<svg width="300" height="450" xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 450">
   <defs>
     <style>
       .card-slot { fill: #f8f9fa; stroke: #dee2e6; stroke-width: 2; }
@@ -775,11 +775,20 @@ function loadGeneratedCard(cardName) {
   if (generatedCards[cardName]) {
     currentCard = cardName
     const cardData = generatedCards[cardName]
+    console.log('Données de la carte:', cardData)
+    
     // Si c'est un objet avec svgContent, utiliser svgContent, sinon utiliser directement
     const svgContent = typeof cardData === 'string' ? cardData : cardData.svgContent
-    loadSVGInIframe(svgContent)
-    updateSVGTitle('generation', cardName)
-    console.log('Carte générée chargée:', cardName)
+    console.log('Contenu SVG:', svgContent ? svgContent.substring(0, 100) + '...' : 'UNDEFINED')
+    
+    if (svgContent) {
+      loadSVGInIframe(svgContent)
+      updateSVGTitle('generation', cardName)
+      console.log('Carte générée chargée:', cardName)
+    } else {
+      console.error('Contenu SVG manquant pour la carte:', cardName)
+      alert('Erreur: Contenu SVG manquant pour cette carte')
+    }
   }
 }
 
@@ -1241,6 +1250,81 @@ function updateSheetDisplay() {
   console.log('Planche mise à jour avec les cartes sélectionnées')
 }
 
+
+/**
+ * Génère le SVG complet d'une planche (utilise la même logique que updateSheetDisplay)
+ */
+function generateSheetSVG(sheetData) {
+  // Créer une copie du template
+  let sheetSVG = sheetTemplate
+  
+  // Remplacer les slots vides par des slots occupés et ajouter les cartes
+  for (let i = 0; i < 9; i++) {
+    const cardName = sheetData[i]
+    const slotId = `slot-${i}`
+    
+    if (cardName && generatedCards[cardName]) {
+      // Remplacer la classe "empty" par "filled"
+      sheetSVG = sheetSVG.replace(
+        `id="${slotId}" class="card-slot empty"`,
+        `id="${slotId}" class="card-slot"`
+      )
+      
+      // Récupérer le contenu SVG de la carte
+      const cardData = generatedCards[cardName]
+      const cardSVG = typeof cardData === 'string' ? cardData : cardData.svgContent
+      
+      if (cardSVG) {
+        // Extraire le contenu SVG (sans les balises <svg>)
+        const svgMatch = cardSVG.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
+        const svgContent = svgMatch ? svgMatch[1] : cardSVG
+        
+        // Calculer la position et la taille pour cette carte
+        const x = 10 + (i % 3) * 80 // Position exacte du slot
+        const y = 10 + Math.floor(i / 3) * 110 // Position exacte du slot
+        const width = 63 // Largeur exacte du slot
+        const height = 88 // Hauteur exacte du slot
+        
+        // Extraire les dimensions réelles du SVG
+        const widthMatch = cardSVG.match(/width="([^"]*)"/)
+        const heightMatch = cardSVG.match(/height="([^"]*)"/)
+        const viewBoxMatch = cardSVG.match(/viewBox="([^"]*)"/)
+        
+        let svgWidth = 640 // Valeur par défaut
+        let svgHeight = 480 // Valeur par défaut
+        
+        if (widthMatch && heightMatch) {
+          svgWidth = parseFloat(widthMatch[1])
+          svgHeight = parseFloat(heightMatch[1])
+        } else if (viewBoxMatch) {
+          const viewBox = viewBoxMatch[1].split(/\s+/)
+          if (viewBox.length >= 4) {
+            svgWidth = parseFloat(viewBox[2])
+            svgHeight = parseFloat(viewBox[3])
+          }
+        }
+        
+        // Positionner et redimensionner la carte en préservant l'aspect ratio
+        const scaleX = width / svgWidth
+        const scaleY = height / svgHeight
+        const uniformScale = Math.min(scaleX, scaleY) // Utiliser le plus petit scale pour préserver l'aspect ratio
+        
+        const cardElement = `
+          <g id="card-${i}" class="card-content" transform="translate(${x}, ${y})">
+            <g transform="scale(${uniformScale})">
+              ${svgContent}
+            </g>
+          </g>`
+        
+        // Insérer la carte avant la fermeture du conteneur
+        sheetSVG = sheetSVG.replace('</g>\n</svg>', `${cardElement}\n  </g>\n</svg>`)
+      }
+    }
+  }
+  
+  return sheetSVG
+}
+
 function saveSheet() {
   const sheetName = sheetNameInput.value.trim()
   
@@ -1259,8 +1343,14 @@ function saveSheet() {
   // Mettre à jour la date de dernière modification
   updateLastModifiedDate()
   
-  // Sauvegarder la planche
-  savedSheets[sheetName] = [...currentSheet]
+  // Générer le SVG de la planche
+  const sheetSVG = generateSheetSVG(currentSheet)
+  
+  // Sauvegarder la planche avec le SVG
+  savedSheets[sheetName] = {
+    cards: [...currentSheet],
+    svg: sheetSVG
+  }
   localStorage.setItem('savedSheets', JSON.stringify(savedSheets))
   
   // Mettre à jour l'affichage
@@ -1274,7 +1364,8 @@ function saveSheet() {
 
 function loadSheet(sheetName) {
   if (savedSheets[sheetName]) {
-    currentSheet = [...savedSheets[sheetName]]
+    const sheetData = savedSheets[sheetName]
+    currentSheet = Array.isArray(sheetData) ? [...sheetData] : [...sheetData.cards]
     
     // Mettre à jour les sélecteurs
     for (let i = 0; i < 9; i++) {
@@ -1345,7 +1436,8 @@ function loadSavedSheets() {
 function viewSheet(sheetName) {
   if (savedSheets[sheetName]) {
     // Charger la planche dans currentSheet
-    currentSheet = [...savedSheets[sheetName]]
+    const sheetData = savedSheets[sheetName]
+    currentSheet = Array.isArray(sheetData) ? [...sheetData] : [...sheetData.cards]
     
     // Mettre à jour les sélecteurs
     for (let i = 0; i < 9; i++) {
@@ -1369,56 +1461,12 @@ function viewSheet(sheetName) {
 // Ouvrir une planche dans un nouvel onglet
 function openSheetInNewTab(sheetName) {
   if (savedSheets[sheetName]) {
-    // Créer une copie temporaire de currentSheet
-    const tempSheet = [...savedSheets[sheetName]]
+    // Récupérer les données de la planche
+    const sheetData = savedSheets[sheetName]
+    const cards = Array.isArray(sheetData) ? sheetData : sheetData.cards
     
     // Générer le SVG de la planche
-    let sheetSVG = sheetTemplate
-    
-    // Remplacer les slots vides par des slots occupés et ajouter les cartes
-    for (let i = 0; i < 9; i++) {
-      const cardName = tempSheet[i]
-      const slotId = `slot-${i}`
-      
-      if (cardName && generatedCards[cardName]) {
-        // Remplacer la classe "empty" par "filled"
-        sheetSVG = sheetSVG.replace(
-          `id="${slotId}" class="card-slot empty"`,
-          `id="${slotId}" class="card-slot"`
-        )
-        
-        // Récupérer le contenu SVG de la carte
-        const cardData = generatedCards[cardName]
-        const cardSVG = typeof cardData === 'string' ? cardData : cardData.svgContent
-        
-        if (cardSVG) {
-          // Extraire le contenu SVG (sans les balises <svg>)
-          const svgMatch = cardSVG.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
-          const svgContent = svgMatch ? svgMatch[1] : cardSVG
-          
-          // Calculer la position et la taille pour cette carte
-          const x = 20 + (i % 3) * 180 // Position exacte du slot
-          const y = 20 + Math.floor(i / 3) * 280 // Position exacte du slot
-          const width = 150 // Largeur exacte du slot
-          const height = 250 // Hauteur exacte du slot
-          
-        // Ajouter la carte dans le conteneur
-        // Positionner et redimensionner la carte pour remplir le slot
-        const scaleX = width / 640
-        const scaleY = height / 480
-        
-        const cardElement = `
-          <g id="card-${i}" class="card-content" transform="translate(${x}, ${y})">
-            <g transform="scale(${uniformScale})">
-              ${svgContent}
-            </g>
-          </g>`
-          
-          // Insérer la carte avant la fermeture du conteneur
-          sheetSVG = sheetSVG.replace('</g>\n</svg>', `${cardElement}\n  </g>\n</svg>`)
-        }
-      }
-    }
+    const sheetSVG = generateSheetSVG(cards)
     
     // Créer un blob et ouvrir dans un nouvel onglet
     const blob = new Blob([sheetSVG], { type: 'image/svg+xml' })
@@ -1434,56 +1482,12 @@ function openSheetInNewTab(sheetName) {
 // Télécharger une planche
 function downloadSheet(sheetName) {
   if (savedSheets[sheetName]) {
-    // Créer une copie temporaire de currentSheet
-    const tempSheet = [...savedSheets[sheetName]]
+    // Récupérer les données de la planche
+    const sheetData = savedSheets[sheetName]
+    const cards = Array.isArray(sheetData) ? sheetData : sheetData.cards
     
-    // Générer le SVG de la planche (même logique que openSheetInNewTab)
-    let sheetSVG = sheetTemplate
-    
-    // Remplacer les slots vides par des slots occupés et ajouter les cartes
-    for (let i = 0; i < 9; i++) {
-      const cardName = tempSheet[i]
-      const slotId = `slot-${i}`
-      
-      if (cardName && generatedCards[cardName]) {
-        // Remplacer la classe "empty" par "filled"
-        sheetSVG = sheetSVG.replace(
-          `id="${slotId}" class="card-slot empty"`,
-          `id="${slotId}" class="card-slot"`
-        )
-        
-        // Récupérer le contenu SVG de la carte
-        const cardData = generatedCards[cardName]
-        const cardSVG = typeof cardData === 'string' ? cardData : cardData.svgContent
-        
-        if (cardSVG) {
-          // Extraire le contenu SVG (sans les balises <svg>)
-          const svgMatch = cardSVG.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
-          const svgContent = svgMatch ? svgMatch[1] : cardSVG
-          
-          // Calculer la position et la taille pour cette carte
-          const x = 20 + (i % 3) * 180 // Position exacte du slot
-          const y = 20 + Math.floor(i / 3) * 280 // Position exacte du slot
-          const width = 150 // Largeur exacte du slot
-          const height = 250 // Hauteur exacte du slot
-          
-        // Ajouter la carte dans le conteneur
-        // Positionner et redimensionner la carte pour remplir le slot
-        const scaleX = width / 640
-        const scaleY = height / 480
-        
-        const cardElement = `
-          <g id="card-${i}" class="card-content" transform="translate(${x}, ${y})">
-            <g transform="scale(${uniformScale})">
-              ${svgContent}
-            </g>
-          </g>`
-          
-          // Insérer la carte avant la fermeture du conteneur
-          sheetSVG = sheetSVG.replace('</g>\n</svg>', `${cardElement}\n  </g>\n</svg>`)
-        }
-      }
-    }
+    // Générer le SVG de la planche
+    const sheetSVG = generateSheetSVG(cards)
     
     // Télécharger le fichier
     const blob = new Blob([sheetSVG], { type: 'image/svg+xml' })
@@ -2694,11 +2698,16 @@ function performProjectSave() {
         const name = cardEntries[i][0]
         const card = cardEntries[i][1]
         const fileName = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.svg'
-        cardsFolder.file(fileName, card.svg)
+        
+        // Récupérer le contenu SVG correct
+        const svgContent = typeof card === 'string' ? card : card.svgContent
+        console.log(`Sauvegarde carte ${name}:`, svgContent ? svgContent.substring(0, 100) + '...' : 'UNDEFINED')
+        
+        cardsFolder.file(fileName, svgContent)
         cardsData[name] = {
           file: fileName, // Référence au fichier
-          data: card.data,
-          model: card.model
+          data: card.data || null,
+          model: card.model || null
         }
       }
       zip.file('generated_cards.json', JSON.stringify(cardsData, null, 2))
@@ -2725,6 +2734,7 @@ function performProjectSave() {
     // 4. Sauvegarder les images (binaires)
     if (Object.keys(savedImages).length > 0) {
       const imagesFolder = zip.folder('images')
+      const imagesData = {}
       const imageEntries = Object.entries(savedImages)
       for (var i = 0; i < imageEntries.length; i++) {
         const name = imageEntries[i][0]
@@ -2733,12 +2743,21 @@ function performProjectSave() {
         const fileName = name + '.' + imageData.type
         // Utiliser directement le fichier comme dans l'upload
         imagesFolder.file(fileName, imageData.data)
+        // Sauvegarder les métadonnées
+        imagesData[name] = {
+          file: fileName,
+          type: imageData.type,
+          size: imageData.size,
+          lastModified: imageData.lastModified
+        }
       }
+      zip.file('images.json', JSON.stringify(imagesData, null, 2))
     }
     
     // 5. Sauvegarder les textes (avec extension .txt)
     if (Object.keys(savedTexts).length > 0) {
       const textsFolder = zip.folder('texts')
+      const textsData = {}
       const textEntries = Object.entries(savedTexts)
       for (var i = 0; i < textEntries.length; i++) {
         const name = textEntries[i][0]
@@ -2746,7 +2765,13 @@ function performProjectSave() {
         // Ajouter l'extension .txt si elle n'existe pas
         const fileName = name.endsWith('.txt') ? name : name + '.txt'
         textsFolder.file(fileName, textData.content)
+        // Sauvegarder les métadonnées
+        textsData[name] = {
+          file: fileName,
+          type: textData.type
+        }
       }
+      zip.file('texts.json', JSON.stringify(textsData, null, 2))
     }
     
     // 6. Sauvegarder la configuration Framacalc
@@ -2822,8 +2847,6 @@ function loadProject() {
       
       // Lire le fichier ZIP
       JSZip.loadAsync(file).then(function(zip) {
-        var loadPromises = []
-        
         // 1. Charger les modèles
         if (zip.file('models.json')) {
           zip.file('models.json').async('text').then(function(text) {
@@ -2837,16 +2860,20 @@ function loadProject() {
               
               // Charger le fichier SVG depuis le dossier models
               const svgPromise = zip.file('models/' + fileName).async('text').then(function(svg) {
-                savedModels[name] = svg
+                return { name: name, svg: svg }
               })
               loadPromises.push(svgPromise)
             }
             
-            Promise.all(loadPromises).then(function() {
+            Promise.all(loadPromises).then(function(results) {
+              for (var j = 0; j < results.length; j++) {
+                savedModels[results[j].name] = results[j].svg
+              }
               updateModelSelector()
               updateModelsList()
               console.log('Modèles chargés:', Object.keys(modelsData).length)
             })
+            
           })
         }
         
@@ -2863,19 +2890,23 @@ function loadProject() {
               
               // Charger le fichier SVG depuis le dossier generated_cards
               const cardPromise = zip.file('generated_cards/' + cardInfo.file).async('text').then(function(svg) {
-                generatedCards[name] = {
-                  svg: svg,
-                  data: cardInfo.data,
-                  model: cardInfo.model
-                }
+                return { name: name, svg: svg, data: cardInfo.data, model: cardInfo.model }
               })
               cardLoadPromises.push(cardPromise)
             }
             
-            Promise.all(cardLoadPromises).then(function() {
+            Promise.all(cardLoadPromises).then(function(results) {
+              for (var j = 0; j < results.length; j++) {
+                generatedCards[results[j].name] = {
+                  svgContent: results[j].svg,
+                  data: results[j].data,
+                  model: results[j].model
+                }
+              }
               updateGeneratedCardsList()
               console.log('Cartes générées chargées:', Object.keys(cardsData).length)
             })
+            
           })
         }
         
@@ -2892,80 +2923,126 @@ function loadProject() {
               
               // Charger le fichier SVG depuis le dossier sheets
               const sheetPromise = zip.file('sheets/' + sheetInfo.file).async('text').then(function(svg) {
-                savedSheets[name] = {
-                  svg: svg,
-                  cards: sheetInfo.cards
-                }
+                return { name: name, svg: svg, cards: sheetInfo.cards }
               })
               sheetLoadPromises.push(sheetPromise)
             }
             
-            Promise.all(sheetLoadPromises).then(function() {
+            Promise.all(sheetLoadPromises).then(function(results) {
+              for (var j = 0; j < results.length; j++) {
+                savedSheets[results[j].name] = {
+                  svg: results[j].svg,
+                  cards: results[j].cards
+                }
+              }
               updateSheetsList()
               console.log('Planches chargées:', Object.keys(sheetsData).length)
             })
+            
           })
         }
         
         // 4. Charger les images
-        if (zip.folder('images')) {
-          const imagesFolder = zip.folder('images')
-          const imageFileEntries = Object.entries(imagesFolder.files)
-          for (var i = 0; i < imageFileEntries.length; i++) {
-            const relativePath = imageFileEntries[i][0]
-            const zipObject = imageFileEntries[i][1]
-            if (!zipObject.dir) {
-              const fileName = relativePath.split('/').pop()
-              const imagePromise = zipObject.async('arraybuffer').then(function(content) {
-                // Extraire le nom sans extension et l'extension
-                const lastDotIndex = fileName.lastIndexOf('.')
-                const nameWithoutExt = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName
-                const extension = lastDotIndex !== -1 ? fileName.substring(lastDotIndex + 1).toLowerCase() : ''
-                const type = getImageTypeFromFileName(fileName)
+        if (zip.file('images.json')) {
+          zip.file('images.json').async('text').then(function(text) {
+            const imagesData = JSON.parse(text)
+            const imageEntries = Object.entries(imagesData)
+            var imageLoadPromises = []
+            
+            for (var i = 0; i < imageEntries.length; i++) {
+              const name = imageEntries[i][0]
+              const imageInfo = imageEntries[i][1]
+              
+              // Charger le fichier image depuis le dossier images
+              const imagePromise = zip.file('images/' + imageInfo.file).async('arraybuffer').then(function(content) {
+                return { name: name, imageInfo: imageInfo, content: content }
+              })
+              imageLoadPromises.push(imagePromise)
+            }
+            
+            Promise.all(imageLoadPromises).then(function(results) {
+              console.log('=== CHARGEMENT IMAGES ===')
+              console.log('Résultats images:', results)
+              for (var j = 0; j < results.length; j++) {
+                const name = results[j].name
+                const imageInfo = results[j].imageInfo
+                const content = results[j].content
+                
+                console.log(`Image ${j}: name=${name}, fileName=${imageInfo.file}, content type=${typeof content}`)
                 
                 // Créer un objet File pour la compatibilité avec IndexedDB
-                const file = new File([content], fileName, { type: type })
+                const file = new File([content], imageInfo.file, { type: getImageTypeFromFileName(imageInfo.file) })
                 
-                // Utiliser le nom sans extension comme clé
-                savedImages[nameWithoutExt] = {
-                  name: nameWithoutExt,
-                  type: extension,
+                // Utiliser le nom comme clé
+                savedImages[name] = {
+                  name: name,
+                  type: imageInfo.type,
                   data: file,
-                  size: file.size,
-                  lastModified: file.lastModified
+                  size: imageInfo.size,
+                  lastModified: imageInfo.lastModified
                 }
                 
+                console.log(`Image ${j} sauvegardée avec clé: ${name}`)
+                
                 // Sauvegarder aussi dans IndexedDB
-                return saveImageToIndexedDB(nameWithoutExt, file, extension)
-              })
-              loadPromises.push(imagePromise)
-            }
-          }
+                saveImageToIndexedDB(name, file, imageInfo.type)
+              }
+              updateImagesList()
+              console.log('Images chargées:', Object.keys(savedImages).length)
+              console.log('Clés des images:', Object.keys(savedImages))
+              
+              // Vérifier si c'est la dernière opération de chargement
+              if (Object.keys(savedImages).length > 0 || Object.keys(savedTexts).length > 0) {
+                showDataStatus('✅ Projet chargé avec succès !', 'success')
+                console.log('=== FIN CHARGEMENT PROJET ===')
+              }
+            })
+          })
         }
         
         // 5. Charger les textes
-        if (zip.folder('texts')) {
-          const textsFolder = zip.folder('texts')
-          const textFileEntries = Object.entries(textsFolder.files)
-          for (var i = 0; i < textFileEntries.length; i++) {
-            const relativePath = textFileEntries[i][0]
-            const zipObject = textFileEntries[i][1]
-            if (!zipObject.dir) {
-              const fileName = relativePath.split('/').pop()
-              const textPromise = zipObject.async('text').then(function(content) {
-                const type = getTextTypeFromFileName(fileName)
+        if (zip.file('texts.json')) {
+          zip.file('texts.json').async('text').then(function(text) {
+            const textsData = JSON.parse(text)
+            const textEntries = Object.entries(textsData)
+            var textLoadPromises = []
+            
+            for (var i = 0; i < textEntries.length; i++) {
+              const name = textEntries[i][0]
+              const textInfo = textEntries[i][1]
+              
+              // Charger le fichier texte depuis le dossier texts
+              const textPromise = zip.file('texts/' + textInfo.file).async('text').then(function(content) {
+                return { name: name, textInfo: textInfo, content: content }
+              })
+              textLoadPromises.push(textPromise)
+            }
+            
+            Promise.all(textLoadPromises).then(function(results) {
+              console.log('=== CHARGEMENT TEXTES ===')
+              console.log('Résultats textes:', results)
+              for (var j = 0; j < results.length; j++) {
+                const name = results[j].name
+                const textInfo = results[j].textInfo
+                const content = results[j].content
                 
-                savedTexts[fileName] = {
+                console.log(`Texte ${j}: name=${name}, fileName=${textInfo.file}, content type=${typeof content}`)
+                
+                savedTexts[name] = {
                   content: content,
-                  type: type
+                  type: textInfo.type
                 }
                 
+                console.log(`Texte ${j} sauvegardé avec clé: ${name}`)
+                
                 // Sauvegarder aussi dans IndexedDB
-                return saveTextToIndexedDB(fileName, content, type)
-              })
-              loadPromises.push(textPromise)
-            }
-          }
+                saveTextToIndexedDB(name, content, textInfo.type)
+              }
+              updateTextsList()
+              console.log('Textes chargés:', Object.keys(savedTexts).length)
+              console.log('Clés des textes:', Object.keys(savedTexts))
+            })
+          })
         }
         
         // 6. Charger la configuration Framacalc
@@ -3005,19 +3082,8 @@ function loadProject() {
           })
         }
         
-        // Attendre que toutes les images et textes soient chargés
-        Promise.all(loadPromises).then(function() {
-          updateImagesList()
-          updateTextsList()
-          console.log('Images chargées:', Object.keys(savedImages).length)
-          console.log('Textes chargés:', Object.keys(savedTexts).length)
-          
-          showDataStatus('✅ Projet chargé avec succès !', 'success')
-          console.log('=== FIN CHARGEMENT PROJET ===')
-        }).catch(function(error) {
-          console.error('Erreur chargement images/textes:', error)
-          showDataStatus('❌ Erreur chargement images/textes: ' + error.message, 'error')
-        })
+        // Les images et textes sont maintenant gérés séparément avec leurs propres Promise.all()
+        // Le message de succès sera affiché par les fonctions individuelles
         
       }).catch(function(error) {
         console.error('Erreur lecture ZIP:', error)
@@ -3103,6 +3169,10 @@ function clearProject() {
   updateImagesList()
   updateTextsList()
   updateProjectNameDisplay()
+  
+  // Réinitialiser la date de création pour le nouveau projet
+  projectCreationDate = new Date().toISOString()
+  console.log('Nouvelle date de création initialisée:', projectCreationDate)
   
   // Effacer l'affichage
   document.getElementById('contentDisplay').innerHTML = ''
