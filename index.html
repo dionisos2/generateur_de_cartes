@@ -8,6 +8,7 @@
 	          integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8="
 	          crossorigin="anonymous"></script>
         <script type="application/javascript" src="build/cards-generator.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <style>
             .tabs-container {
                 width: 100%;
@@ -298,18 +299,31 @@
         <noscript>Your browser does not support JavaScript!</noscript>
        <div style="display: flex; gap: 0px;">
            <div id="leftColumn" style="flex: 0 0 40%; min-width: 200px; max-width: calc(100% - 200px);">
-                <!-- Configuration Framacalc au-dessus de l'iframe -->
-                <div style="margin-bottom: 10px; overflow: hidden; width: 100%;">
-                    <h3>Configuration Framacalc</h3>
-                    <p>
-                        <label for="framacalcUrlTextBox">Copiez ici l'adresse de votre Framacalc :</label><br>
-                        <input id="framacalcUrlTextBox" type="text" size="60" value=" " style="width: 100%; max-width: 100%; box-sizing: border-box;" />
-                    </p>
-                    <p>
-                        <button id="validateCalcButton" type="button">CHARGER CSV DEPUIS FRAMACALC</button>
-                        <button id="reloadDataButton" type="button" title="Recharger les données de la feuille">🔄 RECHARGER DONNÉES</button>
-                        <button id="CSVbutton" type="button" disabled title="Fonctionnalité à venir">SAUVEGARDER CSV DANS UN FICHIER</button>
-                    </p>
+                <!-- Section Projet -->
+                <div style="margin-bottom: 10px; padding: 10px; background: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 style="margin: 0; color: #2c5aa0;">📁 Gestion du Projet</h3>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="projectNameDisplay" style="font-weight: bold; color: #666; font-size: 14px;">Aucun projet ouvert</span>
+                            <button id="projectInfoButton" type="button" title="Détails du projet" style="display: none; background: #007bff; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer; font-weight: bold;">i</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <button id="saveProjectButton" type="button" title="Sauvegarder le projet complet">💾 Sauvegarder</button>
+                        <button id="loadProjectButton" type="button" title="Charger un projet">📂 Charger</button>
+                        <button id="closeProjectButton" type="button" title="Fermer le projet actuel" style="background: #ff6b6b; color: white;">🗑️ Fermer</button>
+                        <input id="projectFileInput" type="file" accept=".cgg" style="display: none;" />
+                    </div>
+                </div>
+
+                <!-- Configuration Framacalc compacte -->
+                <div style="margin-bottom: 10px; padding: 8px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+                    <h4 style="margin: 0 0 6px 0; color: #666;">Configuration Framacalc</h4>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                        <input id="framacalcUrlTextBox" type="text" placeholder="URL de votre Framacalc..." style="flex: 1; min-width: 200px; padding: 4px;" />
+                        <button id="validateCalcButton" type="button" style="padding: 4px 8px;">Charger</button>
+                        <button id="reloadDataButton" type="button" title="Recharger les données" style="padding: 4px 8px;">🔄</button>
+                    </div>
                 </div>
                 
                 <iframe id="calcPage" src="" width="100%" height="500" frameborder=0 style="min-height: 100px;"> </iframe>
@@ -494,6 +508,35 @@
         </div>
         
 	      <div id="svgPreview"></div>
+
+        <!-- Boîte de dialogue pour les détails du projet -->
+        <div id="projectInfoModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; border-radius: 8px; width: 400px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #2c5aa0;">📋 Détails du Projet</h3>
+                    <button id="closeProjectInfoModal" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer;">✕</button>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="projectInfoName" style="display: block; margin-bottom: 5px; font-weight: bold;">Nom du projet :</label>
+                    <input id="projectInfoName" type="text" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" />
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="projectInfoVersion" style="display: block; margin-bottom: 5px; font-weight: bold;">Version :</label>
+                    <input id="projectInfoVersion" type="text" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" />
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="projectInfoDescription" style="display: block; margin-bottom: 5px; font-weight: bold;">Description :</label>
+                    <textarea id="projectInfoDescription" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical;"></textarea>
+                </div>
+                <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 12px; color: #666;">
+                    <div><strong>Créé le :</strong> <span id="projectInfoCreated">-</span></div>
+                    <div><strong>Dernière modification :</strong> <span id="projectInfoModified">-</span></div>
+                </div>
+                <div style="text-align: center; color: #666; font-size: 12px; font-style: italic;">
+                    Les modifications sont sauvegardées automatiquement à la fermeture
+                </div>
+            </div>
+        </div>
 
     </body>
 

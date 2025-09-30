@@ -28,6 +28,13 @@ var csvData = null // Données CSV chargées
 var csvHeaders = [] // En-têtes des colonnes CSV
 var cardCounter = 0 // Compteur pour les cartes générées
 
+// Variables pour la gestion de projet
+var currentProjectName = null
+var projectCreationDate = null
+var projectLastModified = null
+var projectVersion = "1.0"
+var projectDescription = "Projet de génération de cartes"
+
 // Variables pour la planche de cartes
 var sheetGrid
 var sheetSelectors
@@ -190,6 +197,52 @@ function initForm () {
     })
   } else {
     console.error('reloadDataButton not found')
+  }
+
+  // Initialiser les boutons de gestion de projet
+  var saveProjectButton = document.getElementById('saveProjectButton')
+  if (saveProjectButton) {
+    saveProjectButton.addEventListener('click', saveProject)
+  }
+
+  var loadProjectButton = document.getElementById('loadProjectButton')
+  if (loadProjectButton) {
+    loadProjectButton.addEventListener('click', loadProject)
+  }
+
+  var closeProjectButton = document.getElementById('closeProjectButton')
+  if (closeProjectButton) {
+    closeProjectButton.addEventListener('click', closeProject)
+  }
+
+  // Initialiser l'affichage du nom du projet
+  updateProjectNameDisplay()
+  
+  // Initialiser la date de création au chargement de la page
+  if (!projectCreationDate) {
+    projectCreationDate = new Date().toISOString()
+    console.log('Date de création initialisée au chargement de la page:', projectCreationDate)
+  }
+
+  // Initialiser les événements de la boîte de dialogue des détails du projet
+  var projectInfoButton = document.getElementById('projectInfoButton')
+  if (projectInfoButton) {
+    projectInfoButton.addEventListener('click', openProjectInfoDialog)
+  }
+
+  var closeProjectInfoModal = document.getElementById('closeProjectInfoModal')
+  if (closeProjectInfoModal) {
+    closeProjectInfoModal.addEventListener('click', closeProjectInfoDialog)
+  }
+
+  // Fermer en cliquant sur l'arrière-plan
+  var projectInfoModal = document.getElementById('projectInfoModal')
+  if (projectInfoModal) {
+    projectInfoModal.addEventListener('click', function(event) {
+      if (event.target === projectInfoModal) {
+        closeProjectInfoDialog()
+      }
+    })
   }
 
   var validateSVGButton = document.getElementById('validateSVGButton')
@@ -478,6 +531,9 @@ function loadModel(modelName) {
 
 function deleteModel(modelName) {
   if (confirm('Êtes-vous sûr de vouloir supprimer le modèle "' + modelName + '" ?')) {
+    // Mettre à jour la date de dernière modification
+    updateLastModifiedDate()
+    
     delete savedModels[modelName]
     localStorage.setItem('savedModels', JSON.stringify(savedModels))
     updateModelsList()
@@ -573,6 +629,9 @@ function generateCard() {
   console.log('Données CSV disponibles:', !!csvData, csvData ? csvData.length : 0)
   console.log('En-têtes CSV:', csvHeaders)
   console.log('Modèles sauvegardés:', Object.keys(savedModels))
+  
+  // Mettre à jour la date de dernière modification
+  updateLastModifiedDate()
   
   if (!csvData || !csvHeaders.length) {
     alert('Veuillez d\'abord charger des données CSV en cliquant sur "VALIDER CSV"')
@@ -726,6 +785,9 @@ function loadGeneratedCard(cardName) {
 
 function deleteGeneratedCard(cardName) {
   if (confirm('Êtes-vous sûr de vouloir supprimer la carte "' + cardName + '" ?')) {
+    // Mettre à jour la date de dernière modification
+    updateLastModifiedDate()
+    
     delete generatedCards[cardName]
     localStorage.setItem('generatedCards', JSON.stringify(generatedCards))
     updateGeneratedCardsList()
@@ -1194,6 +1256,9 @@ function saveSheet() {
     return
   }
   
+  // Mettre à jour la date de dernière modification
+  updateLastModifiedDate()
+  
   // Sauvegarder la planche
   savedSheets[sheetName] = [...currentSheet]
   localStorage.setItem('savedSheets', JSON.stringify(savedSheets))
@@ -1233,6 +1298,9 @@ function loadSheet(sheetName) {
 
 function deleteSheet(sheetName) {
   if (confirm('Êtes-vous sûr de vouloir supprimer la planche "' + sheetName + '" ?')) {
+    // Mettre à jour la date de dernière modification
+    updateLastModifiedDate()
+    
     delete savedSheets[sheetName]
     localStorage.setItem('savedSheets', JSON.stringify(savedSheets))
     updateSheetsList()
@@ -2096,6 +2164,9 @@ function uploadImage() {
     return
   }
   
+  // Mettre à jour la date de dernière modification
+  updateLastModifiedDate()
+  
   if (savedImages[name]) {
     if (!confirm(`Une image nommée "${name}" existe déjà. Voulez-vous la remplacer ?`)) {
       return
@@ -2227,6 +2298,9 @@ function deleteImage(name) {
     return
   }
   
+  // Mettre à jour la date de dernière modification
+  updateLastModifiedDate()
+  
   deleteImageFromIndexedDB(name).then(() => {
     delete savedImages[name]
     updateImagesList()
@@ -2277,6 +2351,9 @@ function uploadText() {
     alert('Veuillez entrer un nom pour le texte')
     return
   }
+  
+  // Mettre à jour la date de dernière modification
+  updateLastModifiedDate()
   
   if (savedTexts[name]) {
     if (!confirm(`Un texte nommé "${name}" existe déjà. Voulez-vous le remplacer ?`)) {
@@ -2400,6 +2477,9 @@ function deleteText(name) {
     return
   }
   
+  // Mettre à jour la date de dernière modification
+  updateLastModifiedDate()
+  
   deleteTextFromIndexedDB(name).then(() => {
     delete savedTexts[name]
     updateTextsList()
@@ -2408,6 +2488,661 @@ function deleteText(name) {
     console.error('Erreur suppression texte:', e)
     showDataStatus(`❌ Erreur suppression texte: ${e.message}`, 'error')
   })
+}
+
+// ==================== GESTION DES PROJETS ====================
+
+
+/**
+ * Met à jour l'affichage du nom du projet
+ */
+function updateProjectNameDisplay() {
+  const display = document.getElementById('projectNameDisplay')
+  const infoButton = document.getElementById('projectInfoButton')
+  
+  console.log('updateProjectNameDisplay - currentProjectName:', currentProjectName)
+  console.log('updateProjectNameDisplay - infoButton found:', !!infoButton)
+  
+  if (display) {
+    if (currentProjectName) {
+      display.textContent = 'Projet : ' + currentProjectName
+      display.style.color = '#2c5aa0'
+    } else {
+      display.textContent = 'Nouveau projet'
+      display.style.color = '#666'
+    }
+  }
+  
+  // Toujours afficher le bouton info
+  if (infoButton) {
+    infoButton.style.display = 'inline-block'
+    console.log('Bouton info affiché')
+  }
+}
+
+/**
+ * Ouvre la boîte de dialogue des détails du projet
+ */
+function openProjectInfoDialog() {
+  const modal = document.getElementById('projectInfoModal')
+  const nameInput = document.getElementById('projectInfoName')
+  const versionInput = document.getElementById('projectInfoVersion')
+  const descriptionInput = document.getElementById('projectInfoDescription')
+  const createdSpan = document.getElementById('projectInfoCreated')
+  const modifiedSpan = document.getElementById('projectInfoModified')
+  
+  if (modal) {
+    // Remplir les champs
+    nameInput.value = currentProjectName || ''
+    versionInput.value = projectVersion
+    descriptionInput.value = projectDescription
+    
+    // Afficher les dates
+    if (projectCreationDate) {
+      createdSpan.textContent = new Date(projectCreationDate).toLocaleString('fr-FR')
+    } else {
+      createdSpan.textContent = 'Non défini'
+    }
+    
+    if (projectLastModified) {
+      modifiedSpan.textContent = new Date(projectLastModified).toLocaleString('fr-FR')
+    } else {
+      modifiedSpan.textContent = 'Non défini'
+    }
+    
+    modal.style.display = 'block'
+  }
+}
+
+/**
+ * Ferme la boîte de dialogue des détails du projet et sauvegarde automatiquement
+ */
+function closeProjectInfoDialog() {
+  const modal = document.getElementById('projectInfoModal')
+  const nameInput = document.getElementById('projectInfoName')
+  const versionInput = document.getElementById('projectInfoVersion')
+  const descriptionInput = document.getElementById('projectInfoDescription')
+  
+  if (modal) {
+    // Sauvegarder automatiquement les modifications
+    if (nameInput && versionInput && descriptionInput) {
+      const newName = nameInput.value.trim()
+      const newVersion = versionInput.value.trim()
+      const newDescription = descriptionInput.value.trim()
+      
+      if (newName) {
+        // Mettre à jour les variables
+        currentProjectName = newName
+        projectVersion = newVersion || '1.0'
+        projectDescription = newDescription || 'Projet de génération de cartes'
+        
+        // Mettre à jour l'affichage
+        updateProjectNameDisplay()
+        
+        showDataStatus('✅ Détails du projet mis à jour', 'success')
+      }
+    }
+    
+    modal.style.display = 'none'
+  }
+}
+
+/**
+ * Sauvegarde les détails du projet (fonction conservée pour compatibilité)
+ */
+function saveProjectInfo() {
+  closeProjectInfoDialog()
+}
+
+
+/**
+ * Met à jour la date de dernière modification
+ */
+function updateLastModifiedDate() {
+  projectLastModified = new Date().toISOString()
+  console.log('Date de dernière modification mise à jour:', projectLastModified)
+}
+
+/**
+ * Sauvegarde le projet complet dans un fichier .cgg
+ */
+function saveProject() {
+  try {
+    console.log('=== DÉBUT SAUVEGARDE PROJET ===')
+    
+    // Vérifier qu'il y a du contenu à sauvegarder
+    const hasContent = Object.keys(savedModels).length > 0 || 
+                      Object.keys(generatedCards).length > 0 || 
+                      Object.keys(savedSheets).length > 0 ||
+                      Object.keys(savedImages).length > 0 ||
+                      Object.keys(savedTexts).length > 0
+    
+    if (!hasContent) {
+      showDataStatus('❌ Aucun contenu à sauvegarder', 'error')
+      return
+    }
+    
+    // Vérifier si le projet a déjà un nom
+    if (!currentProjectName || currentProjectName.trim() === '') {
+      // Ouvrir la boîte de dialogue des détails du projet
+      openProjectInfoDialog()
+      
+      // Attendre que l'utilisateur ferme la boîte de dialogue
+      var checkDialogClosed = setInterval(function() {
+        var modal = document.getElementById('projectInfoModal')
+        if (modal && modal.style.display === 'none') {
+          clearInterval(checkDialogClosed)
+          
+          // Vérifier que le nom du projet est défini
+          if (!currentProjectName || currentProjectName.trim() === '') {
+            showDataStatus('❌ Nom de projet requis', 'error')
+            return
+          }
+          
+          // Mettre à jour la date de dernière modification
+          updateLastModifiedDate()
+          
+          showDataStatus('💾 Sauvegarde du projet en cours...', 'info')
+          
+          // Continuer avec la sauvegarde
+          performProjectSave()
+        }
+      }, 100)
+    } else {
+      // Le projet a déjà un nom, sauvegarder directement
+      // Mettre à jour la date de dernière modification
+      updateLastModifiedDate()
+      
+      showDataStatus('💾 Sauvegarde du projet en cours...', 'info')
+      
+      // Continuer avec la sauvegarde
+      performProjectSave()
+    }
+    
+  } catch (error) {
+    console.error('Erreur sauvegarde projet:', error)
+    showDataStatus('❌ Erreur sauvegarde: ' + error.message, 'error')
+  }
+}
+
+function performProjectSave() {
+  try {
+    // Créer l'archive ZIP
+    const zip = new JSZip()
+    
+    // 1. Sauvegarder les modèles (fichiers SVG séparés)
+    if (Object.keys(savedModels).length > 0) {
+      const modelsFolder = zip.folder('models')
+      const modelsData = {}
+      const modelEntries = Object.entries(savedModels)
+      for (var i = 0; i < modelEntries.length; i++) {
+        const name = modelEntries[i][0]
+        const svg = modelEntries[i][1]
+        const fileName = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.svg'
+        modelsFolder.file(fileName, svg)
+        modelsData[name] = fileName // Référence au fichier
+      }
+      zip.file('models.json', JSON.stringify(modelsData, null, 2))
+    }
+    
+    // 2. Sauvegarder les cartes générées (fichiers SVG séparés)
+    if (Object.keys(generatedCards).length > 0) {
+      const cardsFolder = zip.folder('generated_cards')
+      const cardsData = {}
+      const cardEntries = Object.entries(generatedCards)
+      for (var i = 0; i < cardEntries.length; i++) {
+        const name = cardEntries[i][0]
+        const card = cardEntries[i][1]
+        const fileName = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.svg'
+        cardsFolder.file(fileName, card.svg)
+        cardsData[name] = {
+          file: fileName, // Référence au fichier
+          data: card.data,
+          model: card.model
+        }
+      }
+      zip.file('generated_cards.json', JSON.stringify(cardsData, null, 2))
+    }
+    
+    // 3. Sauvegarder les planches (fichiers SVG séparés)
+    if (Object.keys(savedSheets).length > 0) {
+      const sheetsFolder = zip.folder('sheets')
+      const sheetsData = {}
+      const sheetEntries = Object.entries(savedSheets)
+      for (var i = 0; i < sheetEntries.length; i++) {
+        const name = sheetEntries[i][0]
+        const sheet = sheetEntries[i][1]
+        const fileName = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.svg'
+        sheetsFolder.file(fileName, sheet.svg)
+        sheetsData[name] = {
+          file: fileName, // Référence au fichier
+          cards: sheet.cards
+        }
+      }
+      zip.file('sheets.json', JSON.stringify(sheetsData, null, 2))
+    }
+    
+    // 4. Sauvegarder les images (binaires)
+    if (Object.keys(savedImages).length > 0) {
+      const imagesFolder = zip.folder('images')
+      const imageEntries = Object.entries(savedImages)
+      for (var i = 0; i < imageEntries.length; i++) {
+        const name = imageEntries[i][0]
+        const imageData = imageEntries[i][1]
+        // Créer le nom de fichier avec l'extension
+        const fileName = name + '.' + imageData.type
+        // Utiliser directement le fichier comme dans l'upload
+        imagesFolder.file(fileName, imageData.data)
+      }
+    }
+    
+    // 5. Sauvegarder les textes (avec extension .txt)
+    if (Object.keys(savedTexts).length > 0) {
+      const textsFolder = zip.folder('texts')
+      const textEntries = Object.entries(savedTexts)
+      for (var i = 0; i < textEntries.length; i++) {
+        const name = textEntries[i][0]
+        const textData = textEntries[i][1]
+        // Ajouter l'extension .txt si elle n'existe pas
+        const fileName = name.endsWith('.txt') ? name : name + '.txt'
+        textsFolder.file(fileName, textData.content)
+      }
+    }
+    
+    // 6. Sauvegarder la configuration Framacalc
+    const framacalcUrl = document.getElementById('framacalcUrlTextBox').value.trim()
+    if (framacalcUrl) {
+      zip.file('framacalc_config.json', JSON.stringify({
+        url: framacalcUrl,
+        csvHeaders: csvHeaders,
+        csvData: csvData
+      }, null, 2))
+    }
+    
+    // 7. Créer le fichier de métadonnées du projet
+    const projectInfo = {
+      version: projectVersion,
+      name: currentProjectName,
+      created: projectCreationDate,
+      lastModified: projectLastModified,
+      description: projectDescription,
+      content: {
+        models: Object.keys(savedModels).length,
+        generatedCards: Object.keys(generatedCards).length,
+        sheets: Object.keys(savedSheets).length,
+        images: Object.keys(savedImages).length,
+        texts: Object.keys(savedTexts).length
+      }
+    }
+    zip.file('project_info.json', JSON.stringify(projectInfo, null, 2))
+    
+    // Générer le fichier ZIP
+    zip.generateAsync({ type: 'blob' }).then(function(zipBlob) {
+      // Télécharger le fichier
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = currentProjectName.replace(/[^a-zA-Z0-9_-]/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.cgg'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      
+      showDataStatus('✅ Projet sauvegardé avec succès !', 'success')
+      console.log('=== FIN SAUVEGARDE PROJET ===')
+    }).catch(function(error) {
+      console.error('Erreur génération ZIP:', error)
+      showDataStatus('❌ Erreur génération ZIP: ' + error.message, 'error')
+    })
+  } catch (error) {
+    console.error('Erreur performProjectSave:', error)
+    showDataStatus('❌ Erreur sauvegarde: ' + error.message, 'error')
+  }
+}
+
+/**
+ * Charge un projet depuis un fichier .cgg
+ */
+function loadProject() {
+  const fileInput = document.getElementById('projectFileInput')
+  fileInput.click()
+  
+  fileInput.onchange = function(event) {
+    const file = event.target.files[0]
+    if (!file) return
+    
+    if (!file.name.endsWith('.cgg')) {
+      showDataStatus('❌ Veuillez sélectionner un fichier .cgg', 'error')
+      return
+    }
+    
+    try {
+      console.log('=== DÉBUT CHARGEMENT PROJET ===')
+      showDataStatus('📂 Chargement du projet...', 'info')
+      
+      // Lire le fichier ZIP
+      JSZip.loadAsync(file).then(function(zip) {
+        var loadPromises = []
+        
+        // 1. Charger les modèles
+        if (zip.file('models.json')) {
+          zip.file('models.json').async('text').then(function(text) {
+            const modelsData = JSON.parse(text)
+            const modelEntries = Object.entries(modelsData)
+            var loadPromises = []
+            
+            for (var i = 0; i < modelEntries.length; i++) {
+              const name = modelEntries[i][0]
+              const fileName = modelEntries[i][1]
+              
+              // Charger le fichier SVG depuis le dossier models
+              const svgPromise = zip.file('models/' + fileName).async('text').then(function(svg) {
+                savedModels[name] = svg
+              })
+              loadPromises.push(svgPromise)
+            }
+            
+            Promise.all(loadPromises).then(function() {
+              updateModelSelector()
+              updateModelsList()
+              console.log('Modèles chargés:', Object.keys(modelsData).length)
+            })
+          })
+        }
+        
+        // 2. Charger les cartes générées
+        if (zip.file('generated_cards.json')) {
+          zip.file('generated_cards.json').async('text').then(function(text) {
+            const cardsData = JSON.parse(text)
+            const cardEntries = Object.entries(cardsData)
+            var cardLoadPromises = []
+            
+            for (var i = 0; i < cardEntries.length; i++) {
+              const name = cardEntries[i][0]
+              const cardInfo = cardEntries[i][1]
+              
+              // Charger le fichier SVG depuis le dossier generated_cards
+              const cardPromise = zip.file('generated_cards/' + cardInfo.file).async('text').then(function(svg) {
+                generatedCards[name] = {
+                  svg: svg,
+                  data: cardInfo.data,
+                  model: cardInfo.model
+                }
+              })
+              cardLoadPromises.push(cardPromise)
+            }
+            
+            Promise.all(cardLoadPromises).then(function() {
+              updateGeneratedCardsList()
+              console.log('Cartes générées chargées:', Object.keys(cardsData).length)
+            })
+          })
+        }
+        
+        // 3. Charger les planches
+        if (zip.file('sheets.json')) {
+          zip.file('sheets.json').async('text').then(function(text) {
+            const sheetsData = JSON.parse(text)
+            const sheetEntries = Object.entries(sheetsData)
+            var sheetLoadPromises = []
+            
+            for (var i = 0; i < sheetEntries.length; i++) {
+              const name = sheetEntries[i][0]
+              const sheetInfo = sheetEntries[i][1]
+              
+              // Charger le fichier SVG depuis le dossier sheets
+              const sheetPromise = zip.file('sheets/' + sheetInfo.file).async('text').then(function(svg) {
+                savedSheets[name] = {
+                  svg: svg,
+                  cards: sheetInfo.cards
+                }
+              })
+              sheetLoadPromises.push(sheetPromise)
+            }
+            
+            Promise.all(sheetLoadPromises).then(function() {
+              updateSheetsList()
+              console.log('Planches chargées:', Object.keys(sheetsData).length)
+            })
+          })
+        }
+        
+        // 4. Charger les images
+        if (zip.folder('images')) {
+          const imagesFolder = zip.folder('images')
+          const imageFileEntries = Object.entries(imagesFolder.files)
+          for (var i = 0; i < imageFileEntries.length; i++) {
+            const relativePath = imageFileEntries[i][0]
+            const zipObject = imageFileEntries[i][1]
+            if (!zipObject.dir) {
+              const fileName = relativePath.split('/').pop()
+              const imagePromise = zipObject.async('arraybuffer').then(function(content) {
+                // Extraire le nom sans extension et l'extension
+                const lastDotIndex = fileName.lastIndexOf('.')
+                const nameWithoutExt = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName
+                const extension = lastDotIndex !== -1 ? fileName.substring(lastDotIndex + 1).toLowerCase() : ''
+                const type = getImageTypeFromFileName(fileName)
+                
+                // Créer un objet File pour la compatibilité avec IndexedDB
+                const file = new File([content], fileName, { type: type })
+                
+                // Utiliser le nom sans extension comme clé
+                savedImages[nameWithoutExt] = {
+                  name: nameWithoutExt,
+                  type: extension,
+                  data: file,
+                  size: file.size,
+                  lastModified: file.lastModified
+                }
+                
+                // Sauvegarder aussi dans IndexedDB
+                return saveImageToIndexedDB(nameWithoutExt, file, extension)
+              })
+              loadPromises.push(imagePromise)
+            }
+          }
+        }
+        
+        // 5. Charger les textes
+        if (zip.folder('texts')) {
+          const textsFolder = zip.folder('texts')
+          const textFileEntries = Object.entries(textsFolder.files)
+          for (var i = 0; i < textFileEntries.length; i++) {
+            const relativePath = textFileEntries[i][0]
+            const zipObject = textFileEntries[i][1]
+            if (!zipObject.dir) {
+              const fileName = relativePath.split('/').pop()
+              const textPromise = zipObject.async('text').then(function(content) {
+                const type = getTextTypeFromFileName(fileName)
+                
+                savedTexts[fileName] = {
+                  content: content,
+                  type: type
+                }
+                
+                // Sauvegarder aussi dans IndexedDB
+                return saveTextToIndexedDB(fileName, content, type)
+              })
+              loadPromises.push(textPromise)
+            }
+          }
+        }
+        
+        // 6. Charger la configuration Framacalc
+        if (zip.file('framacalc_config.json')) {
+          zip.file('framacalc_config.json').async('text').then(function(text) {
+            const config = JSON.parse(text)
+            document.getElementById('framacalcUrlTextBox').value = config.url || ''
+            if (config.csvHeaders && config.csvData) {
+              csvHeaders = config.csvHeaders
+              csvData = config.csvData
+              console.log('Configuration Framacalc chargée')
+            }
+          })
+        }
+        
+        // 7. Charger les métadonnées du projet
+        if (zip.file('project_info.json')) {
+          zip.file('project_info.json').async('text').then(function(text) {
+            const projectInfo = JSON.parse(text)
+            if (projectInfo.name) {
+              currentProjectName = projectInfo.name
+            }
+            if (projectInfo.version) {
+              projectVersion = projectInfo.version
+            }
+            if (projectInfo.description) {
+              projectDescription = projectInfo.description
+            }
+            if (projectInfo.created) {
+              projectCreationDate = projectInfo.created
+            }
+            if (projectInfo.lastModified) {
+              projectLastModified = projectInfo.lastModified
+            }
+            updateProjectNameDisplay()
+            console.log('Informations du projet:', projectInfo)
+          })
+        }
+        
+        // Attendre que toutes les images et textes soient chargés
+        Promise.all(loadPromises).then(function() {
+          updateImagesList()
+          updateTextsList()
+          console.log('Images chargées:', Object.keys(savedImages).length)
+          console.log('Textes chargés:', Object.keys(savedTexts).length)
+          
+          showDataStatus('✅ Projet chargé avec succès !', 'success')
+          console.log('=== FIN CHARGEMENT PROJET ===')
+        }).catch(function(error) {
+          console.error('Erreur chargement images/textes:', error)
+          showDataStatus('❌ Erreur chargement images/textes: ' + error.message, 'error')
+        })
+        
+      }).catch(function(error) {
+        console.error('Erreur lecture ZIP:', error)
+        showDataStatus('❌ Erreur lecture ZIP: ' + error.message, 'error')
+      })
+      
+    } catch (error) {
+      console.error('Erreur chargement projet:', error)
+      showDataStatus('❌ Erreur chargement: ' + error.message, 'error')
+    }
+  }
+}
+
+/**
+ * Ferme le projet actuel après confirmation
+ */
+function closeProject() {
+  const hasContent = Object.keys(savedModels).length > 0 || 
+                    Object.keys(generatedCards).length > 0 || 
+                    Object.keys(savedSheets).length > 0 ||
+                    Object.keys(savedImages).length > 0 ||
+                    Object.keys(savedTexts).length > 0
+  
+  if (!hasContent) {
+    showDataStatus('ℹ️ Aucun projet à fermer', 'info')
+    return
+  }
+  
+  const confirmMessage = 'Êtes-vous sûr de vouloir fermer le projet actuel ?\n\n' +
+                        'Toutes les données seront perdues :\n' +
+                        `• ${Object.keys(savedModels).length} modèles\n` +
+                        `• ${Object.keys(generatedCards).length} cartes générées\n` +
+                        `• ${Object.keys(savedSheets).length} planches\n` +
+                        `• ${Object.keys(savedImages).length} images\n` +
+                        `• ${Object.keys(savedTexts).length} textes\n\n` +
+                        'Voulez-vous d\'abord sauvegarder le projet ?'
+  
+  if (confirm(confirmMessage)) {
+    // Proposer de sauvegarder d'abord
+    if (confirm('Sauvegarder le projet avant de le fermer ?')) {
+      saveProject()
+      // Attendre un peu avant de fermer pour laisser le temps à la sauvegarde
+      setTimeout(function() {
+        clearProject()
+      }, 2000)
+    } else {
+      clearProject()
+    }
+  }
+}
+
+/**
+ * Efface tous les éléments du projet
+ */
+function clearProject() {
+  // Effacer les données
+  savedModels = {}
+  generatedCards = {}
+  savedSheets = {}
+  savedImages = {}
+  savedTexts = {}
+  csvHeaders = []
+  csvData = []
+  currentProjectName = null
+  projectCreationDate = null
+  projectLastModified = null
+  projectVersion = "1.0"
+  projectDescription = "Projet de génération de cartes"
+  
+  // Effacer IndexedDB
+  if (db) {
+    const transaction = db.transaction(['images', 'texts'], 'readwrite')
+    transaction.objectStore('images').clear()
+    transaction.objectStore('texts').clear()
+  }
+  
+  // Réinitialiser l'interface
+  document.getElementById('framacalcUrlTextBox').value = ''
+  updateModelSelector()
+  updateModelsList()
+  updateGeneratedCardsList()
+  updateSheetsList()
+  updateImagesList()
+  updateTextsList()
+  updateProjectNameDisplay()
+  
+  // Effacer l'affichage
+  document.getElementById('contentDisplay').innerHTML = ''
+  document.getElementById('svgTitleText').textContent = 'Aucun contenu sélectionné'
+  
+  showDataStatus('🗑️ Projet fermé', 'info')
+  console.log('Projet fermé et données effacées')
+}
+
+/**
+ * Détermine le type MIME d'une image à partir de son nom de fichier
+ */
+function getImageTypeFromFileName(fileName) {
+  const ext = fileName.toLowerCase().split('.').pop()
+  const types = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'svg': 'image/svg+xml',
+    'webp': 'image/webp'
+  }
+  return types[ext] || 'image/png'
+}
+
+/**
+ * Détermine le type MIME d'un texte à partir de son nom de fichier
+ */
+function getTextTypeFromFileName(fileName) {
+  const ext = fileName.toLowerCase().split('.').pop()
+  const types = {
+    'txt': 'text/plain',
+    'csv': 'text/csv',
+    'json': 'application/json',
+    'xml': 'application/xml',
+    'html': 'text/html',
+    'css': 'text/css',
+    'js': 'application/javascript'
+  }
+  return types[ext] || 'text/plain'
 }
 
 // Exposer les fonctions globalement pour les événements onclick
@@ -2429,4 +3164,7 @@ window.viewText = viewText
 window.openTextInNewTab = openTextInNewTab
 window.downloadText = downloadText
 window.deleteText = deleteText
+window.saveProject = saveProject
+window.loadProject = loadProject
+window.closeProject = closeProject
 

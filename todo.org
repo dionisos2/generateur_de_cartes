@@ -110,3 +110,18 @@
   - [X] Détection automatique des dimensions SVG pour un scaling correct
   - [X] Préservation de l'aspect ratio des cartes sans déformation
   - [X] Optimisation des dimensions de la grille (300x450 au lieu de 600x900)
+
+* GESTION DE PROJETS ET AMÉLIORATIONS (2024-12-30)
+  - [X] Ajout du système de gestion de projets avec sauvegarde/chargement .cgg
+  - [X] Interface de gestion de projet avec boutons Sauvegarder/Charger/Fermer
+  - [X] Sauvegarde des modèles, cartes et planches en fichiers SVG séparés
+  - [X] Sauvegarde des images et textes avec leurs extensions correctes
+  - [X] Métadonnées de projet (nom, version, description, dates de création/modification)
+  - [X] Boîte de dialogue modale pour les détails du projet
+  - [X] Sauvegarde conditionnelle (boîte de dialogue seulement si pas de nom)
+  - [X] Gestion intelligente des dates (création au chargement, modification à chaque action)
+  - [X] Fonction updateLastModifiedDate() dans toutes les fonctions de modification
+  - [X] Suppression de la fonction initializeNewProject() inutile
+  - [X] Correction de la sauvegarde des images avec extensions d'origine
+  - [X] Amélioration de l'expérience utilisateur avec interface unifiée
+  - [X] Code optimisé et plus maintenable
