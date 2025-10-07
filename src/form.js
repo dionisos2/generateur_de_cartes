@@ -675,19 +675,31 @@ function switchTabContent(tabName) {
         svgContainer.style.display = 'none'
         framacalcContainer.style.display = 'block'
         
+        // Vider le conteneur pour enlever les statistiques du projet
+        framacalcContainer.innerHTML = '<iframe id="calcPage" src="" width="100%" height="100%" frameborder="0" style="min-height: 300px;"></iframe>'
+        
         console.log('Basculé vers l\'iframe Framacalc')
         
         // Charger l'URL du Framacalc si elle existe
         const framacalcUrl = document.getElementById('framacalcUrlTextBox')
-        if (framacalcUrl && framacalcUrl.value.trim()) {
+        
+        // Attendre un peu que le DOM soit mis à jour
+        setTimeout(() => {
           const iframe = document.getElementById('calcPage')
+          console.log('iframe element (après délai):', iframe)
+          
           if (iframe) {
-            iframe.src = framacalcUrl.value.trim()
-            console.log('URL Framacalc chargée:', framacalcUrl.value.trim())
+            if (framacalcUrl && framacalcUrl.value.trim()) {
+              iframe.src = framacalcUrl.value.trim()
+              console.log('URL Framacalc chargée:', framacalcUrl.value.trim())
+            } else {
+              iframe.src = 'https://framacalc.org/test-minipen'
+              console.log('URL Framacalc par défaut chargée')
+            }
+          } else {
+            console.error('iframe calcPage toujours non trouvée après délai !')
           }
-        } else {
-          console.log('Aucune URL Framacalc définie')
-        }
+        }, 100)
       } else {
         console.log('Conteneurs SVG ou Framacalc non trouvés')
       }
