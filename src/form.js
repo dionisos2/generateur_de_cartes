@@ -1,4 +1,6 @@
 /* global alert */
+console.log('=== CHARGEMENT DE form.js ===')
+
 import setFrames from './interface.js'
 import Svg from './svg.js'
 import Carte from './carte.js'
@@ -224,26 +226,36 @@ function initForm () {
     console.log('Date de création initialisée au chargement de la page:', projectCreationDate)
   }
 
-  // Initialiser les événements de la boîte de dialogue des détails du projet
-  var projectInfoButton = document.getElementById('projectInfoButton')
-  if (projectInfoButton) {
-    projectInfoButton.addEventListener('click', openProjectInfoDialog)
-  }
-
-  var closeProjectInfoModal = document.getElementById('closeProjectInfoModal')
-  if (closeProjectInfoModal) {
-    closeProjectInfoModal.addEventListener('click', closeProjectInfoDialog)
-  }
-
-  // Fermer en cliquant sur l'arrière-plan
-  var projectInfoModal = document.getElementById('projectInfoModal')
-  if (projectInfoModal) {
-    projectInfoModal.addEventListener('click', function(event) {
-      if (event.target === projectInfoModal) {
-        closeProjectInfoDialog()
+  // Les champs de détails du projet sont maintenant intégrés dans l'onglet Projet
+  // Ajouter les event listeners pour la sauvegarde automatique
+  const projectInfoName = document.getElementById('projectInfoName')
+  const projectInfoVersion = document.getElementById('projectInfoVersion')
+  const projectInfoDescription = document.getElementById('projectInfoDescription')
+  
+  if (projectInfoName) {
+    projectInfoName.addEventListener('blur', saveProjectInfoFromFields)
+    projectInfoName.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        saveProjectInfoFromFields()
       }
     })
   }
+  
+  if (projectInfoVersion) {
+    projectInfoVersion.addEventListener('blur', saveProjectInfoFromFields)
+    projectInfoVersion.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        saveProjectInfoFromFields()
+      }
+    })
+  }
+  
+  if (projectInfoDescription) {
+    projectInfoDescription.addEventListener('blur', saveProjectInfoFromFields)
+  }
+  
+  // Initialiser les champs au chargement
+  updateProjectInfoFields()
 
   var validateSVGButton = document.getElementById('validateSVGButton')
   if (validateSVGButton) {
@@ -282,6 +294,13 @@ export function main () {
   setFrames()
   initForm()
   
+  // Initialiser les onglets en premier
+  try {
+    initTabs()
+  } catch (error) {
+    console.error('Erreur lors de l\'initialisation des onglets:', error)
+  }
+  
   // Initialiser IndexedDB et les nouveaux onglets
   initIndexedDB().then(() => {
     console.log('IndexedDB initialisé avec succès')
@@ -297,6 +316,9 @@ export function main () {
     // Initialiser les optimisations de performance
     lazyLoadImages()
     optimizeAnimations()
+    
+    // Initialiser l'affichage de l'onglet Projet au démarrage (statistiques)
+    switchTabContent('project')
     
     console.log('Optimisations de performance initialisées')
   }).catch(e => {
@@ -406,8 +428,22 @@ function loadSelectedSVGFile() {
 // ===== GESTION DES ONGLETS =====
 
 function initTabs() {
+  console.log('=== DÉBUT initTabs ===')
+  
   const tabButtons = document.querySelectorAll('.tab-button')
   const tabContents = document.querySelectorAll('.tab-content')
+  
+  console.log('Onglets détectés:', tabButtons.length)
+  console.log('Contenus d\'onglets détectés:', tabContents.length)
+  
+  if (tabButtons.length === 0) {
+    console.error('Aucun onglet trouvé ! Vérifiez que le HTML est chargé.')
+    return
+  }
+  
+  tabButtons.forEach((button, index) => {
+    console.log(`Onglet ${index}:`, button.getAttribute('data-tab'))
+  })
   
   tabButtons.forEach(button => {
     button.addEventListener('click', function() {
@@ -473,13 +509,135 @@ function initTabs() {
       }
     })
   })
+  
+  console.log('=== FIN initTabs - Event listeners ajoutés ===')
+}
+
+
+// ===== STATISTIQUES SIMPLES DU PROJET =====
+
+function loadProjectStats() {
+  console.log('Chargement des statistiques du projet dans la zone de droite')
+  
+  const framacalcContainer = document.getElementById('framacalcContainer')
+  if (!framacalcContainer) {
+    console.error('Conteneur Framacalc non trouvé')
+    return
+  }
+  
+  // Compter les éléments
+  const modelsCount = Object.keys(savedModels || {}).length
+  const imagesCount = Object.keys(savedImages || {}).length
+  const textsCount = Object.keys(savedTexts || {}).length
+  const cardsCount = Object.keys(generatedCards || {}).length
+  const sheetsCount = Object.keys(savedSheets || {}).length
+  
+  // Générer le HTML simple des statistiques
+  const statsHTML = `
+    <div style="padding: 1rem; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; height: 100%; overflow-y: auto;">
+      <div style="max-width: 800px; margin: 0 auto;">
+        <h2 style="color: var(--primary-color); font-size: 1.25rem; margin-bottom: 1rem; text-align: center;">📊 Statistiques du Projet</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem;">${modelsCount}</div>
+            <div style="color: var(--text-secondary); font-size: 0.8rem;">Modèles</div>
+          </div>
+          
+          <div style="padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem;">${imagesCount}</div>
+            <div style="color: var(--text-secondary); font-size: 0.8rem;">Images</div>
+          </div>
+          
+          <div style="padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem;">${textsCount}</div>
+            <div style="color: var(--text-secondary); font-size: 0.8rem;">Textes</div>
+          </div>
+          
+          <div style="padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem;">${cardsCount}</div>
+            <div style="color: var(--text-secondary); font-size: 0.8rem;">Cartes</div>
+          </div>
+          
+          <div style="padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem;">${sheetsCount}</div>
+            <div style="color: var(--text-secondary); font-size: 0.8rem;">Planches</div>
+          </div>
+        </div>
+        
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem;">
+          <h3 style="color: var(--text-primary); font-size: 1rem; margin-bottom: 0.75rem;">Informations du projet</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem;">
+            <div>
+              <strong>Nom :</strong><br>
+              <span style="color: var(--text-secondary);">${currentProjectName || 'Aucun projet'}</span>
+            </div>
+            <div>
+              <strong>Version :</strong><br>
+              <span style="color: var(--text-secondary);">${projectVersion || '1.0.0'}</span>
+            </div>
+            <div>
+              <strong>Créé le :</strong><br>
+              <span style="color: var(--text-secondary);">${projectCreationDate ? new Date(projectCreationDate).toLocaleDateString('fr-FR') : 'Non défini'}</span>
+            </div>
+            <div>
+              <strong>Dernière modification :</strong><br>
+              <span style="color: var(--text-secondary);">${projectLastModified ? new Date(projectLastModified).toLocaleDateString('fr-FR') : 'Non défini'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+  
+  // Remplacer le contenu du conteneur
+  framacalcContainer.innerHTML = statsHTML
+  
+  console.log('Statistiques chargées:', { modelsCount, imagesCount, textsCount, cardsCount, sheetsCount })
 }
 
 function switchTabContent(tabName) {
+  console.log('switchTabContent appelée avec:', tabName)
   const svgTitleText = document.getElementById('svgTitleText')
-  if (!svgTitleText) return
+  if (!svgTitleText) {
+    console.log('svgTitleText non trouvé')
+    return
+  }
+  
+  // Gérer l'affichage des conteneurs
+  const svgContainer = document.getElementById('svgContainer')
+  const framacalcContainer = document.getElementById('framacalcContainer')
+  const svgTitle = document.getElementById('svgTitle')
+  const zoomControls = document.getElementById('zoomControls')
+  
+  // Par défaut, afficher la zone SVG et masquer Framacalc
+  if (svgContainer && framacalcContainer) {
+    svgContainer.style.display = 'block'
+    framacalcContainer.style.display = 'none'
+  }
+  
+  // Par défaut, afficher le titre et les contrôles de zoom
+  if (svgTitle) svgTitle.style.display = 'block'
+  if (zoomControls) zoomControls.style.display = 'flex'
   
   switch(tabName) {
+    case 'project':
+      // Cacher le titre et les contrôles de zoom pour les statistiques du projet
+      if (svgTitle) svgTitle.style.display = 'none'
+      if (zoomControls) zoomControls.style.display = 'none'
+      
+      // Afficher les statistiques du projet dans la zone d'affichage principale
+      if (svgContainer && framacalcContainer) {
+        svgContainer.style.display = 'none'
+        framacalcContainer.style.display = 'block'
+        
+        // Charger les statistiques du projet
+        loadProjectStats()
+      }
+      
+      // Mettre à jour les champs de détails du projet
+      updateProjectInfoFields()
+      break
     case 'models':
       if (currentModel && savedModels[currentModel]) {
         loadSVGInIframe(savedModels[currentModel])
@@ -488,22 +646,6 @@ function switchTabContent(tabName) {
         svgTitleText.textContent = 'Modèle : Aucun'
         loadSVGInIframe('')
       }
-      break
-    case 'generation':
-      if (currentCard && generatedCards[currentCard]) {
-        // Gérer les objets complexes dans generatedCards
-        const cardData = generatedCards[currentCard]
-        const svgContent = typeof cardData === 'string' ? cardData : cardData.svgContent
-        loadSVGInIframe(svgContent)
-        svgTitleText.textContent = `Carte : ${currentCard}`
-      } else {
-        svgTitleText.textContent = 'Carte : Aucune'
-        loadSVGInIframe('')
-      }
-      break
-    case 'sheet':
-      svgTitleText.textContent = 'Planche de cartes'
-      updateSheetDisplay()
       break
     case 'images':
       if (currentImage && savedImages[currentImage]) {
@@ -522,6 +664,49 @@ function switchTabContent(tabName) {
         svgTitleText.textContent = 'Texte : Aucun'
         loadSVGInIframe('')
       }
+      break
+    case 'lists':
+      // Cacher le titre et les contrôles de zoom pour Framacalc
+      if (svgTitle) svgTitle.style.display = 'none'
+      if (zoomControls) zoomControls.style.display = 'none'
+      
+      // Afficher l'iframe Framacalc dans la zone d'affichage principale
+      if (svgContainer && framacalcContainer) {
+        svgContainer.style.display = 'none'
+        framacalcContainer.style.display = 'block'
+        
+        console.log('Basculé vers l\'iframe Framacalc')
+        
+        // Charger l'URL du Framacalc si elle existe
+        const framacalcUrl = document.getElementById('framacalcUrlTextBox')
+        if (framacalcUrl && framacalcUrl.value.trim()) {
+          const iframe = document.getElementById('calcPage')
+          if (iframe) {
+            iframe.src = framacalcUrl.value.trim()
+            console.log('URL Framacalc chargée:', framacalcUrl.value.trim())
+          }
+        } else {
+          console.log('Aucune URL Framacalc définie')
+        }
+      } else {
+        console.log('Conteneurs SVG ou Framacalc non trouvés')
+      }
+      break
+    case 'generation':
+      if (currentCard && generatedCards[currentCard]) {
+        // Gérer les objets complexes dans generatedCards
+        const cardData = generatedCards[currentCard]
+        const svgContent = typeof cardData === 'string' ? cardData : cardData.svgContent
+        loadSVGInIframe(svgContent)
+        svgTitleText.textContent = `Carte : ${currentCard}`
+      } else {
+        svgTitleText.textContent = 'Carte : Aucune'
+        loadSVGInIframe('')
+      }
+      break
+    case 'sheet':
+      svgTitleText.textContent = 'Planche de cartes'
+      updateSheetDisplay()
       break
     default:
       svgTitleText.textContent = 'Aucun contenu sélectionné'
@@ -2789,15 +2974,14 @@ function updateProjectNameDisplay() {
 /**
  * Ouvre la boîte de dialogue des détails du projet
  */
-function openProjectInfoDialog() {
-  const modal = document.getElementById('projectInfoModal')
+function updateProjectInfoFields() {
   const nameInput = document.getElementById('projectInfoName')
   const versionInput = document.getElementById('projectInfoVersion')
   const descriptionInput = document.getElementById('projectInfoDescription')
   const createdSpan = document.getElementById('projectInfoCreated')
   const modifiedSpan = document.getElementById('projectInfoModified')
   
-  if (modal) {
+  if (nameInput) {
     // Remplir les champs
     nameInput.value = currentProjectName || ''
     versionInput.value = projectVersion
@@ -2815,41 +2999,36 @@ function openProjectInfoDialog() {
     } else {
       modifiedSpan.textContent = 'Non défini'
     }
-    
-    modal.style.display = 'block'
   }
 }
 
 /**
- * Ferme la boîte de dialogue des détails du projet et sauvegarde automatiquement
+ * Sauvegarde les détails du projet depuis les champs intégrés
  */
-function closeProjectInfoDialog() {
-  const modal = document.getElementById('projectInfoModal')
+function saveProjectInfoFromFields() {
   const nameInput = document.getElementById('projectInfoName')
   const versionInput = document.getElementById('projectInfoVersion')
   const descriptionInput = document.getElementById('projectInfoDescription')
   
-  if (modal) {
-    // Sauvegarder automatiquement les modifications
-    if (nameInput && versionInput && descriptionInput) {
-      const newName = nameInput.value.trim()
-      const newVersion = versionInput.value.trim()
-      const newDescription = descriptionInput.value.trim()
-      
-      if (newName) {
-        // Mettre à jour les variables
-        currentProjectName = newName
-        projectVersion = newVersion || '1.0'
-        projectDescription = newDescription || 'Projet de génération de cartes'
-        
-        // Mettre à jour l'affichage
-        updateProjectNameDisplay()
-        
-        showDataStatus('✅ Détails du projet mis à jour', 'success')
-      }
-    }
+  if (nameInput && versionInput && descriptionInput) {
+    const newName = nameInput.value.trim()
+    const newVersion = versionInput.value.trim()
+    const newDescription = descriptionInput.value.trim()
     
-    modal.style.display = 'none'
+    if (newName) {
+      // Mettre à jour les variables
+      currentProjectName = newName
+      projectVersion = newVersion || '1.0'
+      projectDescription = newDescription || 'Projet de génération de cartes'
+      
+      // Mettre à jour l'affichage
+      updateProjectNameDisplay()
+      
+      // Mettre à jour la date de modification
+      updateLastModifiedDate()
+      
+      showDataStatus('✅ Détails du projet mis à jour', 'success')
+    }
   }
 }
 
@@ -2857,7 +3036,7 @@ function closeProjectInfoDialog() {
  * Sauvegarde les détails du projet (fonction conservée pour compatibilité)
  */
 function saveProjectInfo() {
-  closeProjectInfoDialog()
+  saveProjectInfoFromFields()
 }
 
 
@@ -2891,7 +3070,8 @@ function saveProject() {
     // Vérifier si le projet a déjà un nom
     if (!currentProjectName || currentProjectName.trim() === '') {
       // Ouvrir la boîte de dialogue des détails du projet
-      openProjectInfoDialog()
+      showDataStatus('❌ Veuillez d\'abord définir un nom de projet dans l\'onglet Projet', 'error')
+      return
       
       // Attendre que l'utilisateur ferme la boîte de dialogue
       var checkDialogClosed = setInterval(function() {
@@ -3499,4 +3679,11 @@ window.deleteText = deleteText
 window.saveProject = saveProject
 window.loadProject = loadProject
 window.closeProject = closeProject
+
+// Initialiser l'application quand le DOM est chargé
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', main)
+} else {
+  main()
+}
 

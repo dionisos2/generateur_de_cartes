@@ -62,13 +62,19 @@
                 transform: translateY(-1px) translateZ(0);
             }
 
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            
             body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
                 background-color: var(--background-color);
                 color: var(--text-primary);
                 line-height: 1.6;
-                margin: 0;
-                padding: 0;
+                display: flex;
+                flex-direction: column;
             }
 
             .tabs-container {
@@ -145,6 +151,11 @@
             
             .tab-content.active {
                 display: block;
+            }
+            
+            .tab-content-container {
+                height: 100%;
+                overflow-y: auto;
             }
             
             @keyframes fadeIn {
@@ -854,11 +865,6 @@
                 transform: translateZ(0);
             }
             
-            /* Optimisation des modales */
-            #projectInfoModal {
-                will-change: opacity;
-                transform: translateZ(0);
-            }
             
             /* Optimisation des états de chargement */
             .loading {
@@ -873,78 +879,74 @@
     </head>
     <body >
         <noscript>Your browser does not support JavaScript!</noscript>
-       <div style="display: flex; gap: 0px;">
-           <div id="leftColumn" style="flex: 0 0 40%; min-width: 200px; max-width: calc(100% - 200px);">
-                <!-- Section Projet -->
-                <div class="project-section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h3 style="margin: 0; color: var(--primary-color); font-size: 1.125rem; font-weight: 700;">📁 Gestion du Projet</h3>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span id="projectNameDisplay" style="font-weight: 600; color: var(--text-secondary); font-size: 0.875rem;">Aucun projet ouvert</span>
-                            <button id="projectInfoButton" type="button" title="Détails du projet" style="display: none; background: var(--primary-color); color: white; border: none; border-radius: 50%; width: 2rem; height: 2rem; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: var(--transition);">i</button>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                        <button id="saveProjectButton" type="button" title="Sauvegarder le projet complet" class="tooltip" data-tooltip="Sauvegarder le projet complet" aria-label="Sauvegarder le projet complet">💾 Sauvegarder</button>
-                        <button id="loadProjectButton" type="button" title="Charger un projet" class="tooltip" data-tooltip="Charger un projet existant" aria-label="Charger un projet existant">📂 Charger</button>
-                        <button id="closeProjectButton" type="button" title="Fermer le projet actuel" class="tooltip" data-tooltip="Fermer le projet actuel" aria-label="Fermer le projet actuel" style="background: var(--error-color); color: white;">🗑️ Fermer</button>
-                        <input id="projectFileInput" type="file" accept=".cgg" style="display: none;" />
-                    </div>
-                </div>
+       <!-- Système d'onglets principal en haut -->
+       <div class="tabs-container" role="tablist" aria-label="Navigation principale" style="margin-bottom: 1rem;">
+           <div class="tabs-header">
+               <button class="tab-button active" data-tab="project" role="tab" aria-selected="true" aria-controls="project-tab" id="tab-project" aria-label="Onglet Projet">📁 Projet</button>
+               <button class="tab-button" data-tab="models" role="tab" aria-selected="false" aria-controls="models-tab" id="tab-models" aria-label="Onglet Modèles de cartes">🎨 Modèles</button>
+               <button class="tab-button" data-tab="images" role="tab" aria-selected="false" aria-controls="images-tab" id="tab-images" aria-label="Onglet Images sources">📷 Images sources</button>
+               <button class="tab-button" data-tab="texts" role="tab" aria-selected="false" aria-controls="texts-tab" id="tab-texts" aria-label="Onglet Textes sources">📝 Textes sources</button>
+               <button class="tab-button" data-tab="lists" role="tab" aria-selected="false" aria-controls="lists-tab" id="tab-lists" aria-label="Onglet Listes">📋 Listes</button>
+               <button class="tab-button" data-tab="generation" role="tab" aria-selected="false" aria-controls="generation-tab" id="tab-generation" aria-label="Onglet Génération">⚡ Génération</button>
+               <button class="tab-button" data-tab="sheet" role="tab" aria-selected="false" aria-controls="sheet-tab" id="tab-sheet" aria-label="Onglet Planche de cartes">📄 Planche</button>
+           </div>
+       </div>
 
-                <!-- Configuration Framacalc compacte -->
-                <div class="config-section">
-                    <h4 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; font-weight: 600;">Configuration Framacalc</h4>
-                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                        <input id="framacalcUrlTextBox" type="text" placeholder="URL de votre Framacalc..." style="flex: 1; min-width: 200px;" />
-                        <button id="validateCalcButton" type="button">Charger</button>
-                        <button id="reloadDataButton" type="button" title="Recharger les données">🔄</button>
-                    </div>
-                </div>
-                
-                <iframe id="calcPage" src="" width="100%" height="350" frameborder=0 style="min-height: 100px;"> </iframe>
-           </div>
-           
-           <!-- Zone de redimensionnement -->
-           <div id="resizeHandle" style="width: 10px; background: #ddd; cursor: col-resize; display: flex; align-items: center; justify-content: center; position: relative; user-select: none;">
-               <div style="width: 2px; height: 30px; background: #999; border-radius: 1px;"></div>
-           </div>
-           
-           <div id="rightColumn" style="flex: 0 0 60%; min-width: 200px; max-width: calc(100% - 200px);">
-                <!-- Système d'onglets au-dessus du SVG -->
-                <div class="tabs-container" role="tablist" aria-label="Navigation principale">
-                    <div class="tabs-header">
-                        <button class="tab-button active" data-tab="models" role="tab" aria-selected="true" aria-controls="models-tab" id="tab-models" aria-label="Onglet Modèles de cartes">Modèles de cartes</button>
-                        <button class="tab-button" data-tab="images" role="tab" aria-selected="false" aria-controls="images-tab" id="tab-images" aria-label="Onglet Images sources">Images sources</button>
-                        <button class="tab-button" data-tab="texts" role="tab" aria-selected="false" aria-controls="texts-tab" id="tab-texts" aria-label="Onglet Textes sources">Textes sources</button>
-                        <button class="tab-button" data-tab="generation" role="tab" aria-selected="false" aria-controls="generation-tab" id="tab-generation" aria-label="Onglet Génération">Génération</button>
-                        <button class="tab-button" data-tab="sheet" role="tab" aria-selected="false" aria-controls="sheet-tab" id="tab-sheet" aria-label="Onglet Planche de cartes">Planche de cartes</button>
+       <div style="display: flex; gap: 0px; flex: 1; min-height: 0;">
+           <div id="leftColumn" style="flex: 0 0 40%; min-width: 200px; max-width: calc(100% - 200px); height: 100%; overflow: hidden;">
+                <!-- Contenu des onglets dans la colonne de gauche -->
+                <div class="tab-content-container">
+                    <!-- Onglet Projet -->
+                    <div id="project-tab" class="tab-content active" role="tabpanel" aria-labelledby="tab-project" aria-hidden="false">
+                        <h3 style="color: var(--text-primary); font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Gestion du Projet</h3>
+                        
+                        <!-- Section Projet -->
+                        <div class="project-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h4 style="margin: 0; color: var(--primary-color); font-size: 1rem; font-weight: 700;">📁 Projet actuel</h4>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span id="projectNameDisplay" style="font-weight: 600; color: var(--text-secondary); font-size: 0.875rem;">Aucun projet ouvert</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                                <button id="saveProjectButton" type="button" title="Sauvegarder le projet complet" class="tooltip" data-tooltip="Sauvegarder le projet complet" aria-label="Sauvegarder le projet complet">💾 Sauvegarder</button>
+                                <button id="loadProjectButton" type="button" title="Charger un projet" class="tooltip" data-tooltip="Charger un projet existant" aria-label="Charger un projet existant">📂 Charger</button>
+                                <button id="closeProjectButton" type="button" title="Fermer le projet actuel" class="tooltip" data-tooltip="Fermer le projet actuel" aria-label="Fermer le projet actuel" style="background: var(--error-color); color: white;">🗑️ Fermer</button>
+                                <input id="projectFileInput" type="file" accept=".cgg" style="display: none;" />
+                            </div>
+                        </div>
+
+                        <!-- Détails du Projet (intégrés depuis la popup) -->
+                        <div class="config-section">
+                            <h4 style="margin: 0 0 1rem 0; color: var(--text-primary); font-size: 1rem; font-weight: 600;">📋 Détails du Projet</h4>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label for="projectInfoName" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Nom du projet :</label>
+                                <input id="projectInfoName" type="text" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; font-size: 0.875rem;" />
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label for="projectInfoVersion" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Version :</label>
+                                <input id="projectInfoVersion" type="text" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; font-size: 0.875rem;" />
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label for="projectInfoDescription" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Description :</label>
+                                <textarea id="projectInfoDescription" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; resize: vertical; font-size: 0.875rem;"></textarea>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--text-secondary); border: 1px solid var(--border-color);">
+                                <div style="margin-bottom: 0.5rem;"><strong>Créé le :</strong> <span id="projectInfoCreated">-</span></div>
+                                <div><strong>Dernière modification :</strong> <span id="projectInfoModified">-</span></div>
+                            </div>
+                            
+                        </div>
+
+
                     </div>
                     
-                   <!-- Titre du SVG avec contrôles de zoom -->
-                   <div id="svgTitle" style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1.125rem; padding: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid var(--border-color); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--shadow-sm);">
-                       <span id="svgTitleText" style="color: var(--text-primary);">Modèle : Aucun</span>
-                       <!-- Interface de zoom -->
-                       <div id="zoomControls" style="display: flex; gap: 0.5rem; align-items: center;" role="group" aria-label="Contrôles de zoom">
-                           <button id="zoomOut" title="Dézoomer" aria-label="Dézoomer" class="tooltip" data-tooltip="Dézoomer (Ctrl + Molette)">−</button>
-                           <span id="zoomLevel" aria-live="polite" aria-label="Niveau de zoom actuel">100%</span>
-                           <button id="zoomIn" title="Zoomer" aria-label="Zoomer" class="tooltip" data-tooltip="Zoomer (Ctrl + Molette)">+</button>
-                           <button id="zoomReset" title="Réinitialiser le zoom" aria-label="Réinitialiser le zoom" class="tooltip" data-tooltip="Réinitialiser le zoom">⌂</button>
-                       </div>
-                   </div>
-                    
-                   <!-- Zone de contenu principal avec scrollbars -->
-                   <div id="svgContainer" style="width: 100%; height: 350px; min-width: 500px; min-height: 350px; overflow: auto; border: 1px solid var(--border-color); border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); position: relative; box-shadow: var(--shadow-sm);" role="img" aria-label="Zone d'affichage du contenu SVG" tabindex="0">
-                       <div id="contentDisplay" style="width: 100%; height: 100%; min-width: 500px; min-height: 350px; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);" aria-live="polite" aria-label="Contenu affiché">
-                           <!-- Le contenu sera chargé ici directement -->
-                       </div>
-                   </div>
-                </div>
-                
-                <!-- Contenu des onglets sous le SVG -->
-                <div style="margin-top: 0.75rem; overflow: hidden; width: 100%;">
-                    <!-- Onglet Modèles de cartes -->
-                    <div id="models-tab" class="tab-content active" role="tabpanel" aria-labelledby="tab-models" aria-hidden="false">
+                    <!-- Onglet Modèles -->
+                    <div id="models-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-models" aria-hidden="true">
                         <h3 style="color: var(--text-primary); font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Gestion des Modèles SVG</h3>
                         
                         <!-- Zone de saisie du nom du modèle -->
@@ -968,11 +970,11 @@
                             <textarea id="svgTextBox" rows="4" style="font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace; font-size: 0.8rem; margin-bottom: 0.75rem;" readonly="false"></textarea>
                             
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                                <button id="validateSVGButton" type="button">CHARGER DEPUIS SVG LE CODE</button>
+                            <button id="validateSVGButton" type="button">CHARGER DEPUIS SVG LE CODE</button>
                                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                                     <span style="color: var(--text-secondary); font-size: 0.8rem;">Ou sélectionnez un fichier SVG local :</span>
                                     <input type="file" id="svgFileInput" accept=".svg" style="width: auto; flex: 0 0 auto;" />
-                                    <button id="loadSVGButton" type="button">CHARGER SVG DEPUIS LE FICHIER</button>
+                            <button id="loadSVGButton" type="button">CHARGER SVG DEPUIS LE FICHIER</button>
                                 </div>
                             </div>
                         </div>
@@ -991,7 +993,7 @@
                                     <label for="imageNameInput">Nom de l'image :</label>
                                     <input type="text" id="imageNameInput" placeholder="Entrez un nom pour l'image" />
                                 </div>
-                                <button id="uploadImageButton" type="button">UPLOADER L'IMAGE</button>
+                            <button id="uploadImageButton" type="button">UPLOADER L'IMAGE</button>
                             </div>
                         </div>
                         
@@ -1029,6 +1031,21 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Onglet Listes -->
+                    <div id="lists-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-lists" aria-hidden="true">
+                        <h3 style="color: var(--text-primary); font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Gestion des Listes</h3>
+                        
+                        <!-- Configuration Framacalc -->
+                        <div class="config-section" style="margin-bottom: 1rem;">
+                            <h4 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; font-weight: 600;">Configuration Framacalc</h4>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                <input id="framacalcUrlTextBox" type="text" placeholder="URL de votre Framacalc..." style="flex: 1; min-width: 200px;" />
+                                <button id="validateCalcButton" type="button">Charger</button>
+                                <button id="reloadDataButton" type="button" title="Recharger les données">🔄</button>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Onglet Génération -->
                     <div id="generation-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-generation" aria-hidden="true">
@@ -1041,15 +1058,15 @@
                                 <div style="flex: 1; min-width: 200px;">
                                     <label for="modelSelector">Modèle à utiliser :</label>
                                     <select id="modelSelector">
-                                        <option value="">Sélectionner un modèle</option>
-                                    </select>
+                                    <option value="">Sélectionner un modèle</option>
+                                </select>
                                 </div>
                                 <div style="display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap;">
                                     <div>
                                         <label for="cardLineInput">Numéro de ligne :</label>
                                         <input id="cardLineInput" type="number" min="1" value="1" style="width: 100px;" />
                                     </div>
-                                    <button id="generateCardButton" type="button">GÉNÉRER LA CARTE</button>
+                                <button id="generateCardButton" type="button">GÉNÉRER LA CARTE</button>
                                 </div>
                             </div>
                         </div>
@@ -1082,7 +1099,7 @@
                                     <label for="sheetNameInput">Nom de la planche :</label>
                                     <input type="text" id="sheetNameInput" placeholder="Entrez un nom pour la planche" />
                                 </div>
-                                <button id="saveSheetButton" type="button">SAUVEGARDER LA PLANCHE</button>
+                            <button id="saveSheetButton" type="button">SAUVEGARDER LA PLANCHE</button>
                             </div>
                         </div>
                         
@@ -1095,52 +1112,45 @@
                         </div>
                     </div>
                 </div>
+           </div>
+           
+           <!-- Zone de redimensionnement -->
+           <div id="resizeHandle" style="width: 10px; background: #ddd; cursor: col-resize; display: flex; align-items: center; justify-content: center; position: relative; user-select: none;">
+               <div style="width: 2px; height: 30px; background: #999; border-radius: 1px;"></div>
+           </div>
+           
+           <div id="rightColumn" style="flex: 0 0 60%; min-width: 200px; max-width: calc(100% - 200px); height: 100%; overflow: hidden;">
+                    
+                   <!-- Titre du SVG avec contrôles de zoom -->
+                   <div id="svgTitle" style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1.125rem; padding: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid var(--border-color); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--shadow-sm);">
+                       <span id="svgTitleText" style="color: var(--text-primary);">Modèle : Aucun</span>
+                       <!-- Interface de zoom -->
+                       <div id="zoomControls" style="display: flex; gap: 0.5rem; align-items: center;" role="group" aria-label="Contrôles de zoom">
+                           <button id="zoomOut" title="Dézoomer" aria-label="Dézoomer" class="tooltip" data-tooltip="Dézoomer (Ctrl + Molette)">−</button>
+                           <span id="zoomLevel" aria-live="polite" aria-label="Niveau de zoom actuel">100%</span>
+                           <button id="zoomIn" title="Zoomer" aria-label="Zoomer" class="tooltip" data-tooltip="Zoomer (Ctrl + Molette)">+</button>
+                           <button id="zoomReset" title="Réinitialiser le zoom" aria-label="Réinitialiser le zoom" class="tooltip" data-tooltip="Réinitialiser le zoom">⌂</button>
+                       </div>
+                   </div>
+                    
+                   <!-- Zone de contenu principal avec scrollbars -->
+                   <div id="svgContainer" style="width: 100%; height: calc(100% - 80px); min-width: 500px; min-height: 300px; overflow: auto; border: 1px solid var(--border-color); border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); position: relative; box-shadow: var(--shadow-sm);" role="img" aria-label="Zone d'affichage du contenu SVG" tabindex="0">
+                       <div id="contentDisplay" style="width: 100%; height: 100%; min-width: 500px; min-height: 300px; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);" aria-live="polite" aria-label="Contenu affiché">
+                           <!-- Le contenu sera chargé ici directement -->
+                       </div>
+                   </div>
+                   
+                   <!-- Zone Framacalc (masquée par défaut) -->
+                   <div id="framacalcContainer" style="width: 100%; height: calc(100% - 80px); min-width: 500px; min-height: 300px; border: 1px solid var(--border-color); border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: white; position: relative; box-shadow: var(--shadow-sm); display: none;" role="img" aria-label="Zone d'affichage Framacalc" tabindex="0">
+                       <iframe id="calcPage" src="" width="100%" height="100%" frameborder="0" style="min-height: 300px;"> </iframe>
+                   </div>
+                </div>
             </div>
         </div>
         
 	      <div id="svgPreview"></div>
 
         <!-- Boîte de dialogue pour les détails du projet -->
-        <div id="projectInfoModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
-            <div style="background: var(--surface-color); margin: 5% auto; padding: 2rem; border: 1px solid var(--border-color); border-radius: var(--radius-lg); width: 500px; max-width: 90%; box-shadow: var(--shadow-lg); animation: modalSlideIn 0.3s ease-out;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h3 style="margin: 0; color: var(--primary-color); font-size: 1.25rem; font-weight: 700;">📋 Détails du Projet</h3>
-                    <button id="closeProjectInfoModal" style="background: var(--error-color); color: white; border: none; border-radius: var(--radius-sm); padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; transition: var(--transition);">✕</button>
-                </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <label for="projectInfoName" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Nom du projet :</label>
-                    <input id="projectInfoName" type="text" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; font-size: 0.875rem;" />
-                </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <label for="projectInfoVersion" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Version :</label>
-                    <input id="projectInfoVersion" type="text" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; font-size: 0.875rem;" />
-                </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <label for="projectInfoDescription" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Description :</label>
-                    <textarea id="projectInfoDescription" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; resize: vertical; font-size: 0.875rem;"></textarea>
-                </div>
-                <div style="margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--text-secondary); border: 1px solid var(--border-color);">
-                    <div style="margin-bottom: 0.5rem;"><strong>Créé le :</strong> <span id="projectInfoCreated">-</span></div>
-                    <div><strong>Dernière modification :</strong> <span id="projectInfoModified">-</span></div>
-                </div>
-                <div style="text-align: center; color: var(--text-secondary); font-size: 0.875rem; font-style: italic; padding: 1rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: var(--radius-md); border: 1px solid #bae6fd;">
-                    Les modifications sont sauvegardées automatiquement à la fermeture
-                </div>
-            </div>
-        </div>
-        
-        <style>
-            @keyframes modalSlideIn {
-                from { 
-                    opacity: 0; 
-                    transform: translateY(-50px) scale(0.95); 
-                }
-                to { 
-                    opacity: 1; 
-                    transform: translateY(0) scale(1); 
-                }
-            }
-        </style>
 
     </body>
 

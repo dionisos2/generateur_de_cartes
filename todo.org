@@ -125,3 +125,22 @@
   - [X] Correction de la sauvegarde des images avec extensions d'origine
   - [X] Amélioration de l'expérience utilisateur avec interface unifiée
   - [X] Code optimisé et plus maintenable
+
+* REFACTORING MAJEUR DE L'INTERFACE (2025-01-07)
+  - [X] Modernisation complète de l'interface avec design contemporain
+  - [X] Amélioration de la responsivité pour différentes tailles d'écran
+  - [X] Amélioration de l'accessibilité avec labels, tooltips et navigation clavier
+  - [X] Optimisation des performances avec lazy loading et animations CSS
+  - [X] Amélioration de l'expérience utilisateur avec feedback visuel et interactions intuitives
+  - [X] Réduction de l'empreinte de l'interface (boutons, espacements, hauteurs)
+  - [X] Refactoring majeur : onglets en haut pour contrôler l'ensemble de l'interface
+  - [X] Ajout de l'onglet "Projet" avec gestion complète des projets
+  - [X] Ajout de l'onglet "Listes" pour Framacalc et CSV
+  - [X] Ajout de l'onglet "Textes sources" séparé pour la gestion des fichiers texte
+  - [X] Réorganisation en colonnes : contrôles à gauche, affichage à droite
+  - [X] Intégration des détails du projet directement dans l'onglet Projet (suppression de la popup)
+  - [X] Correction de l'affichage de l'iframe Framacalc dans l'onglet Listes
+  - [X] Ajout d'un tableau de bord de statistiques dans l'onglet Projet
+  - [X] Correction de l'initialisation des onglets et de l'affichage des statistiques
+  - [X] Optimisation de la hauteur de la page pour occuper toute la fenêtre
+  - [X] Interface finale épurée et fonctionnelle avec statistiques en temps réel
