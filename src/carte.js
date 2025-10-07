@@ -72,43 +72,102 @@ export default class Carte {
     
     console.log('=== DÉBUT replaceAllTextsInSVG ===')
     console.log('Données disponibles:', this.caractDict)
+    console.log('SVG element:', this.svg.svgElement)
+    console.log('SVG innerHTML:', this.svg.svgElement.innerHTML.substring(0, 500) + '...')
     
-    // Récupérer tous les éléments de texte
-    const textElements = this.svg.svgElement.querySelectorAll('text, tspan')
-    console.log('Éléments de texte trouvés:', textElements.length)
+    // Récupérer tous les éléments du SVG
+    const allElements = this.svg.svgElement.querySelectorAll('*')
+    console.log('Éléments SVG trouvés:', allElements.length)
     
-    textElements.forEach((textElement, index) => {
-      const originalText = textElement.textContent
-      let newText = originalText
-      
-      console.log(`Élément ${index}: "${originalText}"`)
-      
-      // Remplacer chaque nom de colonne par sa valeur
-      for (let caractName in this.caractDict) {
-        const caractValue = this.caractDict[caractName]
-        console.log(`Recherche de "${caractName}" dans "${newText}"`)
+    // Afficher tous les éléments trouvés
+    allElements.forEach((element, index) => {
+      console.log(`Élément ${index}: ${element.tagName} - textContent: "${element.textContent}"`)
+    })
+    
+    allElements.forEach((element, index) => {
+      // 1. Remplacer dans le contenu texte des éléments (text, tspan, etc.)
+      // MAIS PAS dans les éléments <g> qui contiennent d'autres éléments
+      if (element.textContent && element.textContent.trim() && 
+          !(element.tagName === 'g' && element.children.length > 0)) {
+        const originalText = element.textContent
+        let newText = originalText
         
-        // Vérifier si le nom de colonne est présent dans le texte actuel
-        if (newText.includes(caractName)) {
-          // Remplacement global (toutes les occurrences)
-          const regex = new RegExp(caractName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
-          const beforeReplace = newText
-          newText = newText.replace(regex, caractValue)
-          console.log(`Remplacement effectué: "${caractName}" → "${caractValue}"`)
-          console.log(`Avant: "${beforeReplace}" → Après: "${newText}"`)
+        console.log(`TRAITEMENT TEXTE - Élément ${index} (${element.tagName}) - Texte: "${originalText}"`)
+        
+        // Remplacer chaque nom de colonne par sa valeur dans le texte
+        for (let caractName in this.caractDict) {
+          const caractValue = this.caractDict[caractName]
+          console.log(`Vérification "${caractName}" (${caractValue}) dans "${newText}"`)
+          
+          if (newText.includes(caractName)) {
+            const regex = new RegExp(caractName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
+            const beforeReplace = newText
+            newText = newText.replace(regex, caractValue)
+            console.log(`✅ Texte remplacé: "${caractName}" → "${caractValue}"`)
+            console.log(`Avant: "${beforeReplace}" → Après: "${newText}"`)
+          }
         }
+        
+        // Mettre à jour le texte si il y a eu des changements
+        if (newText !== originalText) {
+          element.textContent = newText
+          console.log(`✅ Texte final mis à jour: "${originalText}" → "${newText}"`)
+        } else {
+          console.log(`❌ Aucun changement pour: "${originalText}"`)
+        }
+      } else if (element.tagName === 'g' && element.children.length > 0) {
+        console.log(`⏭️ Élément ${index} (${element.tagName}) ignoré car il contient ${element.children.length} enfants`)
       }
       
-      // Mettre à jour le texte si il y a eu des changements
-      if (newText !== originalText) {
-        textElement.textContent = newText
-        console.log(`Texte final: "${originalText}" → "${newText}"`)
-      } else {
-        console.log(`Aucun changement pour: "${originalText}"`)
+      // 2. Remplacer dans tous les attributs de l'élément
+      for (let i = 0; i < element.attributes.length; i++) {
+        const attr = element.attributes[i]
+        const originalValue = attr.value
+        let newValue = originalValue
+        
+        console.log(`TRAITEMENT ATTRIBUT - Élément ${index} - ${attr.name}: "${originalValue}"`)
+        
+        // Remplacer chaque nom de colonne par sa valeur dans l'attribut
+        for (let caractName in this.caractDict) {
+          const caractValue = this.caractDict[caractName]
+          
+          if (newValue.includes(caractName)) {
+            const regex = new RegExp(caractName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
+            const beforeReplace = newValue
+            newValue = newValue.replace(regex, caractValue)
+            console.log(`✅ Attribut remplacé: "${caractName}" → "${caractValue}"`)
+            console.log(`Avant: "${beforeReplace}" → Après: "${newValue}"`)
+          }
+        }
+        
+        // Mettre à jour l'attribut si il y a eu des changements
+        if (newValue !== originalValue) {
+          element.setAttribute(attr.name, newValue)
+          console.log(`✅ Attribut ${attr.name} mis à jour: "${originalValue}" → "${newValue}"`)
+        }
       }
     })
     
     console.log('=== FIN replaceAllTextsInSVG ===')
+    console.log('SVG final innerHTML:', this.svg.svgElement.innerHTML.substring(0, 500) + '...')
+    console.log('SVG final outerHTML:', this.svg.svgElement.outerHTML.substring(0, 500) + '...')
+    
+    // Vérifier spécifiquement le contenu du groupe g1056
+    const groupElement = this.svg.svgElement.querySelector('#g1056')
+    if (groupElement) {
+      console.log('Groupe g1056 trouvé:', groupElement)
+      console.log('Contenu du groupe g1056:', groupElement.innerHTML)
+      console.log('TextContent du groupe g1056:', groupElement.textContent)
+    } else {
+      console.log('❌ Groupe g1056 non trouvé !')
+    }
+    
+    // Vérifier les éléments text et tspan
+    const textElements = this.svg.svgElement.querySelectorAll('text, tspan')
+    console.log('Éléments text/tspan trouvés:', textElements.length)
+    textElements.forEach((el, index) => {
+      console.log(`Élément ${index}: ${el.tagName} - textContent: "${el.textContent}"`)
+    })
   }
 
   showCartes () {
@@ -131,9 +190,9 @@ export default class Carte {
     // Retourner le contenu HTML du SVG
     let result = ''
     if (this.svg && this.svg.svgElement) {
-      // Cloner l'élément pour éviter de modifier l'original
-      const clonedElement = this.svg.svgElement.cloneNode(true)
-      result = clonedElement.outerHTML
+      // Utiliser directement l'élément modifié (pas de clonage pour l'instant)
+      result = this.svg.svgElement.outerHTML
+      console.log('SVG final (premiers 500 caractères):', result.substring(0, 500) + '...')
     }
     
     console.log('Résultat getSvgText:', result ? 'Contenu trouvé' : 'Vide ou undefined')
