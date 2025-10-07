@@ -293,6 +293,12 @@ export function main () {
     
     // Initialiser les contrôles de zoom
     initZoomControls()
+    
+    // Initialiser les optimisations de performance
+    lazyLoadImages()
+    optimizeAnimations()
+    
+    console.log('Optimisations de performance initialisées')
   }).catch(e => {
     console.error('Erreur initialisation IndexedDB:', e)
     showDataStatus('❌ Erreur initialisation base de données', 'error')
@@ -407,16 +413,64 @@ function initTabs() {
     button.addEventListener('click', function() {
       const targetTab = this.getAttribute('data-tab')
       
-      // Désactiver tous les onglets
-      tabButtons.forEach(btn => btn.classList.remove('active'))
-      tabContents.forEach(content => content.classList.remove('active'))
+      // Désactiver tous les onglets avec animation
+      tabButtons.forEach(btn => {
+        btn.classList.remove('active')
+        btn.setAttribute('aria-selected', 'false')
+      })
+      tabContents.forEach(content => {
+        content.classList.remove('active')
+        content.setAttribute('aria-hidden', 'true')
+      })
       
-      // Activer l'onglet sélectionné
+      // Activer l'onglet sélectionné avec animation
       this.classList.add('active')
-      document.getElementById(targetTab + '-tab').classList.add('active')
+      this.setAttribute('aria-selected', 'true')
+      const targetContent = document.getElementById(targetTab + '-tab')
+      targetContent.classList.add('active')
+      targetContent.setAttribute('aria-hidden', 'false')
       
       // Changer le contenu SVG selon l'onglet
       switchTabContent(targetTab)
+      
+      // Ajouter un effet de focus pour l'accessibilité
+      this.focus()
+    })
+    
+    // Gestion de la navigation clavier
+    button.addEventListener('keydown', function(e) {
+      const currentIndex = Array.from(tabButtons).indexOf(this)
+      let targetIndex = currentIndex
+      
+      switch(e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+          e.preventDefault()
+          targetIndex = (currentIndex + 1) % tabButtons.length
+          break
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          e.preventDefault()
+          targetIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length
+          break
+        case 'Home':
+          e.preventDefault()
+          targetIndex = 0
+          break
+        case 'End':
+          e.preventDefault()
+          targetIndex = tabButtons.length - 1
+          break
+        case 'Enter':
+        case ' ':
+          e.preventDefault()
+          this.click()
+          return
+      }
+      
+      if (targetIndex !== currentIndex) {
+        tabButtons[targetIndex].focus()
+      }
     })
   })
 }
@@ -633,67 +687,105 @@ function generateCard() {
   // Mettre à jour la date de dernière modification
   updateLastModifiedDate()
   
+  // Ajouter un état de chargement au bouton
+  setLoadingState(generateCardButton, true)
+  showProgress('Génération de la carte en cours...', 0)
+  
   if (!csvData || !csvHeaders.length) {
-    alert('Veuillez d\'abord charger des données CSV en cliquant sur "VALIDER CSV"')
+    setLoadingState(generateCardButton, false)
+    hideProgress()
+    showNotification('Veuillez d\'abord charger des données CSV en cliquant sur "VALIDER CSV"', 'warning')
     return
   }
   
   if (!selectedModel) {
-    alert('Veuillez sélectionner un modèle')
+    setLoadingState(generateCardButton, false)
+    hideProgress()
+    showNotification('Veuillez sélectionner un modèle', 'warning')
     return
   }
   
   if (lineNumber < 1 || lineNumber > csvData.length) {
-    alert('Numéro de ligne invalide. Veuillez choisir entre 1 et ' + csvData.length)
+    setLoadingState(generateCardButton, false)
+    hideProgress()
+    showNotification('Numéro de ligne invalide. Veuillez choisir entre 1 et ' + csvData.length, 'error')
     return
   }
   
-  // Récupérer la ligne CSV
-  const csvLine = csvData[lineNumber - 1]
-  
-  // Utiliser le modèle sélectionné - créer directement l'élément DOM
-  const svgTemplate = new Svg()
-  const svgElement = document.createElement('div')
-  svgElement.innerHTML = savedModels[selectedModel]
-  const svgNode = svgElement.querySelector('svg')
-  
-  console.log('Modèle sélectionné:', selectedModel)
-  console.log('Contenu du modèle:', savedModels[selectedModel].substring(0, 200) + '...')
-  console.log('SVG trouvé:', svgNode)
-  
-  if (!svgNode) {
-    alert('Erreur: Le modèle sélectionné ne contient pas de SVG valide')
-    return
+  try {
+    // Récupérer la ligne CSV
+    const csvLine = csvData[lineNumber - 1]
+    
+    // Mise à jour du progrès
+    showProgress('Chargement du modèle...', 25)
+    
+    // Utiliser le modèle sélectionné - créer directement l'élément DOM
+    const svgTemplate = new Svg()
+    const svgElement = document.createElement('div')
+    svgElement.innerHTML = savedModels[selectedModel]
+    const svgNode = svgElement.querySelector('svg')
+    
+    console.log('Modèle sélectionné:', selectedModel)
+    console.log('Contenu du modèle:', savedModels[selectedModel].substring(0, 200) + '...')
+    console.log('SVG trouvé:', svgNode)
+    
+    if (!svgNode) {
+      setLoadingState(generateCardButton, false)
+      hideProgress()
+      showNotification('Erreur: Le modèle sélectionné ne contient pas de SVG valide', 'error')
+      return
+    }
+    
+    svgTemplate.svgElement = svgNode
+    
+    // Mise à jour du progrès
+    showProgress('Génération du contenu...', 50)
+    
+    // Créer la carte
+    const carte = new Carte(csvHeaders, csvLine, svgTemplate)
+    
+    // Mise à jour du progrès
+    showProgress('Sauvegarde de la carte...', 75)
+    
+    // Générer un nom unique pour la carte
+    cardCounter++
+    const cardName = `${selectedModel} - Ligne ${lineNumber} (${cardCounter})`
+    
+    // Sauvegarder la carte
+    generatedCards[cardName] = {
+      name: cardName,
+      svgContent: carte.getSvgText(),
+      lineNumber: lineNumber,
+      csvLine: csvLine,
+      modelName: selectedModel
+    }
+    
+    // Sauvegarder dans localStorage
+    localStorage.setItem('generatedCards', JSON.stringify(generatedCards))
+    
+    // Mise à jour du progrès
+    showProgress('Finalisation...', 100)
+    
+    // Mettre à jour l'affichage
+    updateGeneratedCardsList()
+    
+    // Charger la carte générée dans l'iframe
+    loadGeneratedCard(cardName)
+    
+    // Masquer le progrès et afficher le succès
+    setTimeout(() => {
+      hideProgress()
+      setLoadingState(generateCardButton, false)
+      showNotification(`Carte "${cardName}" générée avec succès !`, 'success')
+    }, 500)
+    
+    console.log('Carte générée:', cardName, 'avec modèle:', selectedModel)
+  } catch (error) {
+    console.error('Erreur lors de la génération:', error)
+    setLoadingState(generateCardButton, false)
+    hideProgress()
+    showNotification(`Erreur lors de la génération: ${error.message}`, 'error')
   }
-  
-  svgTemplate.svgElement = svgNode
-  
-  // Créer la carte
-  const carte = new Carte(csvHeaders, csvLine, svgTemplate)
-  
-  // Générer un nom unique pour la carte
-  cardCounter++
-  const cardName = `${selectedModel} - Ligne ${lineNumber} (${cardCounter})`
-  
-  // Sauvegarder la carte
-  generatedCards[cardName] = {
-    name: cardName,
-    svgContent: carte.getSvgText(),
-    lineNumber: lineNumber,
-    csvLine: csvLine,
-    modelName: selectedModel
-  }
-  
-  // Sauvegarder dans localStorage
-  localStorage.setItem('generatedCards', JSON.stringify(generatedCards))
-  
-  // Mettre à jour l'affichage
-  updateGeneratedCardsList()
-  
-  // Charger la carte générée dans l'iframe
-  loadGeneratedCard(cardName)
-  
-  console.log('Carte générée:', cardName, 'avec modèle:', selectedModel)
 }
 
 // ===== FONCTIONS D'EXPORT SVG =====
@@ -1072,6 +1164,176 @@ function showDataStatus(message, type) {
       }, 500)
     }
   }, 5000)
+}
+
+// Fonction pour afficher des notifications modernes
+function showNotification(message, type = 'info', duration = 4000) {
+  const notification = document.createElement('div')
+  notification.className = `notification ${type}`
+  notification.textContent = message
+  notification.setAttribute('role', 'alert')
+  notification.setAttribute('aria-live', 'polite')
+  
+  document.body.appendChild(notification)
+  
+  // Auto-suppression
+  setTimeout(() => {
+    if (notification && notification.parentNode) {
+      notification.style.animation = 'slideInRight 0.3s ease-out reverse'
+      setTimeout(() => {
+        if (notification && notification.parentNode) {
+          notification.remove()
+        }
+      }, 300)
+    }
+  }, duration)
+}
+
+// Fonction pour ajouter un état de chargement à un élément
+function setLoadingState(element, isLoading) {
+  if (!element) return
+  
+  if (isLoading) {
+    element.classList.add('loading')
+    element.setAttribute('aria-busy', 'true')
+  } else {
+    element.classList.remove('loading')
+    element.setAttribute('aria-busy', 'false')
+  }
+}
+
+// Fonction pour afficher un indicateur de progression
+function showProgress(message, progress = null) {
+  let progressDiv = document.getElementById('progressIndicator')
+  if (!progressDiv) {
+    progressDiv = document.createElement('div')
+    progressDiv.id = 'progressIndicator'
+    progressDiv.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow-lg);
+      z-index: 2000;
+      text-align: center;
+      min-width: 300px;
+    `
+    document.body.appendChild(progressDiv)
+  }
+  
+  progressDiv.innerHTML = `
+    <div style="margin-bottom: 1rem;">
+      <div style="width: 40px; height: 40px; border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+    </div>
+    <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem;">${message}</div>
+    ${progress !== null ? `
+      <div style="background: var(--border-color); border-radius: var(--radius-sm); height: 8px; margin-bottom: 0.5rem;">
+        <div style="background: var(--primary-color); height: 100%; border-radius: var(--radius-sm); width: ${progress}%; transition: width 0.3s ease;"></div>
+      </div>
+      <div style="color: var(--text-secondary); font-size: 0.875rem;">${progress}%</div>
+    ` : ''}
+  `
+}
+
+// Fonction pour masquer l'indicateur de progression
+function hideProgress() {
+  const progressDiv = document.getElementById('progressIndicator')
+  if (progressDiv && progressDiv.parentNode) {
+    progressDiv.remove()
+  }
+}
+
+// Fonction de lazy loading pour les images
+function lazyLoadImages() {
+  const images = document.querySelectorAll('img[data-src]')
+  const imageObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target
+        img.src = img.dataset.src
+        img.classList.add('loaded')
+        img.removeAttribute('data-src')
+        observer.unobserve(img)
+      }
+    })
+  }, {
+    rootMargin: '50px 0px',
+    threshold: 0.01
+  })
+  
+  images.forEach(img => imageObserver.observe(img))
+}
+
+// Fonction pour optimiser les performances des animations
+function optimizeAnimations() {
+  // Détecter si l'utilisateur préfère les animations réduites
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  
+  if (prefersReducedMotion) {
+    // Désactiver les animations pour les utilisateurs qui préfèrent les animations réduites
+    document.documentElement.style.setProperty('--transition', 'none')
+    document.documentElement.style.setProperty('--transition-fast', 'none')
+    document.documentElement.style.setProperty('--transition-slow', 'none')
+  }
+  
+  // Optimiser les performances en utilisant requestAnimationFrame pour les animations
+  let animationId
+  function animate() {
+    // Logique d'animation optimisée
+    animationId = requestAnimationFrame(animate)
+  }
+  
+  // Démarrer l'animation seulement si nécessaire
+  if (document.querySelector('.loading, .notification, .tab-content.active')) {
+    animate()
+  }
+  
+  // Nettoyer l'animation quand elle n'est plus nécessaire
+  return () => {
+    if (animationId) {
+      cancelAnimationFrame(animationId)
+    }
+  }
+}
+
+// Fonction pour optimiser le rendu des listes longues
+function optimizeListRendering(container, items, renderItem) {
+  const containerHeight = container.clientHeight
+  const itemHeight = 50 // Hauteur approximative d'un élément
+  const visibleItems = Math.ceil(containerHeight / itemHeight) + 2 // +2 pour le buffer
+  
+  let startIndex = 0
+  let endIndex = Math.min(startIndex + visibleItems, items.length)
+  
+  function renderVisibleItems() {
+    const visibleItemsArray = items.slice(startIndex, endIndex)
+    container.innerHTML = visibleItemsArray.map(renderItem).join('')
+  }
+  
+  function handleScroll() {
+    const scrollTop = container.scrollTop
+    const newStartIndex = Math.floor(scrollTop / itemHeight)
+    
+    if (newStartIndex !== startIndex) {
+      startIndex = newStartIndex
+      endIndex = Math.min(startIndex + visibleItems, items.length)
+      renderVisibleItems()
+    }
+  }
+  
+  // Initialiser le rendu
+  renderVisibleItems()
+  
+  // Ajouter l'écouteur de scroll
+  container.addEventListener('scroll', handleScroll)
+  
+  return () => {
+    container.removeEventListener('scroll', handleScroll)
+  }
 }
 
 // ===== GESTION DE LA PLANCHE DE CARTES =====

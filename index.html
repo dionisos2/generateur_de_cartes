@@ -10,106 +10,233 @@
         <script type="application/javascript" src="build/cards-generator.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <style>
+            /* Variables CSS pour la cohérence */
+            :root {
+                --primary-color: #2563eb;
+                --primary-hover: #1d4ed8;
+                --secondary-color: #64748b;
+                --success-color: #10b981;
+                --warning-color: #f59e0b;
+                --error-color: #ef4444;
+                --background-color: #f8fafc;
+                --surface-color: #ffffff;
+                --border-color: #e2e8f0;
+                --text-primary: #1e293b;
+                --text-secondary: #64748b;
+                --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+                --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+                --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+                --radius-sm: 0.375rem;
+                --radius-md: 0.5rem;
+                --radius-lg: 0.75rem;
+                --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+                --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            /* Optimisations de performance */
+            * {
+                box-sizing: border-box;
+            }
+            
+            /* Optimisation des animations et transitions */
+            .tab-button, button, .model-item, .view-svg, .download-svg, .delete-model {
+                will-change: transform, box-shadow;
+                transform: translateZ(0); /* Force l'accélération matérielle */
+            }
+            
+            /* Optimisation des scrollbars */
+            #svgContainer {
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Optimisation des gradients */
+            .tabs-header, .project-section, .config-section {
+                background-attachment: fixed;
+            }
+            
+            /* Optimisation des ombres */
+            .tab-button:hover, button:hover, .model-item:hover {
+                box-shadow: var(--shadow-md);
+                transform: translateY(-1px) translateZ(0);
+            }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+                background-color: var(--background-color);
+                color: var(--text-primary);
+                line-height: 1.6;
+                margin: 0;
+                padding: 0;
+            }
+
             .tabs-container {
                 width: 100%;
+                background: var(--surface-color);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-sm);
+                overflow: hidden;
             }
             
             .tabs-header {
                 display: flex;
-                border-bottom: 2px solid #ddd;
-                margin-bottom: 15px;
+                background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+                border-bottom: 1px solid var(--border-color);
+                margin-bottom: 0;
+                padding: 0.5rem;
+                gap: 0.25rem;
             }
             
             .tab-button {
-                background: #f0f0f0;
+                background: transparent;
                 border: none;
-                padding: 10px 15px;
+                padding: 0.5rem 1rem;
                 cursor: pointer;
-                border-radius: 5px 5px 0 0;
-                margin-right: 2px;
-                font-weight: bold;
+                border-radius: var(--radius-md);
+                margin-right: 0;
+                font-weight: 600;
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+                transition: var(--transition);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .tab-button::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+                opacity: 0;
+                transition: var(--transition);
+                z-index: -1;
             }
             
             .tab-button:hover {
-                background: #e0e0e0;
+                color: var(--primary-color);
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-sm);
+            }
+            
+            .tab-button:hover::before {
+                opacity: 0.1;
             }
             
             .tab-button.active {
-                background: #007cba;
+                background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
                 color: white;
+                box-shadow: var(--shadow-md);
+                transform: translateY(-1px);
+            }
+            
+            .tab-button.active::before {
+                opacity: 0;
             }
             
             .tab-content {
                 display: none;
+                padding: 1rem;
+                animation: fadeIn 0.3s ease-in-out;
             }
             
             .tab-content.active {
                 display: block;
             }
             
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
             .model-item {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 5px;
-                margin: 2px 0;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 3px;
+                padding: 0.75rem;
+                margin: 0.25rem 0;
+                background: var(--surface-color);
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-md);
                 cursor: pointer;
+                transition: var(--transition);
+                box-shadow: var(--shadow-sm);
             }
             
             .model-item:hover {
-                background: #f0f8ff;
+                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                border-color: var(--primary-color);
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-md);
             }
             
             .model-name {
                 flex-grow: 1;
-                font-weight: bold;
+                font-weight: 600;
+                color: var(--text-primary);
+                font-size: 0.875rem;
             }
             
             .model-actions {
                 display: flex;
-                gap: 5px;
+                gap: 0.5rem;
             }
             
             .view-svg, .download-svg, .delete-model {
-                background: none;
-                border: 1px solid #ccc;
-                border-radius: 3px;
-                padding: 4px 6px;
+                background: var(--surface-color);
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-sm);
+                padding: 0.375rem 0.5rem;
                 cursor: pointer;
-                font-size: 14px;
-                transition: background-color 0.2s;
+                font-size: 0.7rem;
+                font-weight: 500;
+                transition: var(--transition);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .view-svg {
+                color: var(--primary-color);
+                border-color: var(--primary-color);
             }
             
             .view-svg:hover {
-                background-color: #e3f2fd;
-                border-color: #2196f3;
+                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+                border-color: var(--primary-hover);
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-sm);
+            }
+            
+            .download-svg {
+                color: var(--success-color);
+                border-color: var(--success-color);
             }
             
             .download-svg:hover {
-                background-color: #e8f5e8;
-                border-color: #4caf50;
-            }
-            
-            .delete-model:hover {
-                background-color: #ffebee;
-                border-color: #f44336;
+                background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+                border-color: #059669;
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-sm);
             }
             
             .delete-model {
-                background: #ff4444;
+                background: var(--error-color);
                 color: white;
                 border: none;
-                border-radius: 3px;
-                padding: 2px 6px;
+                border-radius: var(--radius-sm);
+                padding: 0.375rem 0.5rem;
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 0.7rem;
+                font-weight: 500;
             }
             
             .delete-model:hover {
-                background: #cc0000;
+                background: #dc2626;
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-sm);
             }
             
             /* Icônes de types de fichiers */
@@ -147,47 +274,135 @@
             }
             
             .sheet-card {
-                border: 1px solid #ddd;
-                background: white;
+                border: 1px solid var(--border-color);
+                background: var(--surface-color);
                 min-height: 80px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 10px;
+                font-size: 0.625rem;
                 text-align: center;
+                border-radius: var(--radius-md);
+                transition: var(--transition);
+                box-shadow: var(--shadow-sm);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .sheet-card:hover {
+                border-color: var(--primary-color);
+                box-shadow: var(--shadow-md);
+                transform: translateY(-1px);
             }
             
             .sheet-card svg {
                 max-width: 100%;
                 max-height: 100%;
+                border-radius: var(--radius-sm);
             }
             
             .sheet-selector {
                 width: 100%;
-                padding: 5px;
-                border: 1px solid #ccc;
-                border-radius: 3px;
+                padding: 0.75rem;
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-md);
+                background: var(--surface-color);
+                font-size: 0.875rem;
+                transition: var(--transition);
+            }
+            
+            .sheet-selector:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            }
+            
+            /* Styles pour les boutons généraux */
+            button {
+                background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+                color: white;
+                border: none;
+                border-radius: var(--radius-md);
+                padding: 0.5rem 1rem;
+                font-weight: 600;
+                font-size: 0.8rem;
+                cursor: pointer;
+                transition: var(--transition);
+                box-shadow: var(--shadow-sm);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            button:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-md);
+            }
+            
+            button:active {
+                transform: translateY(0);
+                box-shadow: var(--shadow-sm);
+            }
+            
+            button:disabled {
+                background: var(--secondary-color);
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+            
+            /* Styles pour les inputs */
+            input[type="text"], input[type="number"], input[type="file"], 
+            textarea, select {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-md);
+                font-size: 0.875rem;
+                transition: var(--transition);
+                background: var(--surface-color);
+                color: var(--text-primary);
+            }
+            
+            input[type="text"]:focus, input[type="number"]:focus, 
+            textarea:focus, select:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            }
+            
+            /* Styles pour les labels */
+            label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 600;
+                color: var(--text-primary);
+                font-size: 0.875rem;
             }
             
             /* Styles pour la zone de redimensionnement */
             #resizeHandle {
-                transition: background-color 0.2s ease;
+                transition: var(--transition);
+                background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+                position: relative;
             }
             
             #resizeHandle:hover {
-                background: #bbb;
+                background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+                box-shadow: var(--shadow-sm);
             }
             
             #resizeHandle:active {
-                background: #999;
+                background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
             }
             
             #resizeHandle.dragging {
-                background: #666;
+                background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+                box-shadow: var(--shadow-md);
             }
             
             #resizeHandle.dragging > div {
-                background: #fff;
+                background: white;
+                box-shadow: var(--shadow-sm);
             }
             
             /* Styles pour les iframes */
@@ -201,7 +416,10 @@
             /* Styles pour la zone SVG avec scrollbars */
             #svgContainer {
                 position: relative;
-                background: #f9f9f9;
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-sm);
+                overflow: hidden;
             }
             
             #svgPage {
@@ -220,78 +438,436 @@
             }
             
             #svgContainer::-webkit-scrollbar-track {
-                background: #f1f1f1;
+                background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
                 border-radius: 6px;
             }
             
             #svgContainer::-webkit-scrollbar-thumb {
-                background: #888;
+                background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
                 border-radius: 6px;
-                border: 2px solid #f1f1f1;
+                border: 2px solid transparent;
+                background-clip: content-box;
             }
             
             #svgContainer::-webkit-scrollbar-thumb:hover {
-                background: #555;
+                background: linear-gradient(135deg, var(--primary-hover), #1e40af);
+                background-clip: content-box;
             }
             
             #svgContainer::-webkit-scrollbar-corner {
-                background: #f1f1f1;
+                background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
             }
             
             /* Styles pour les contrôles de zoom intégrés */
             #zoomControls {
-                background: rgba(255,255,255,0.8) !important;
-                border: 1px solid #ccc !important;
-                border-radius: 4px !important;
-                padding: 4px 8px !important;
-                transition: all 0.2s ease;
+                background: rgba(255,255,255,0.95) !important;
+                border: 1px solid var(--border-color) !important;
+                border-radius: var(--radius-md) !important;
+                padding: 0.5rem 1rem !important;
+                transition: var(--transition);
+                backdrop-filter: blur(10px);
+                box-shadow: var(--shadow-lg);
             }
             
             #zoomControls:hover {
-                background: rgba(255,255,255,0.95) !important;
-                border-color: #999 !important;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            }
-            
-            #zoomControls button {
-                transition: all 0.2s ease;
-                font-size: 12px;
-                font-weight: bold;
-                min-width: 24px;
-                height: 24px;
-                padding: 2px 6px;
-                border: 1px solid #ccc;
-                border-radius: 3px;
-                background: white;
-                cursor: pointer;
-            }
-            
-            #zoomControls button:hover {
-                background: #f0f0f0;
-                border-color: #999;
+                background: rgba(255,255,255,1) !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: var(--shadow-lg);
                 transform: translateY(-1px);
             }
             
+            #zoomControls button {
+                transition: var(--transition);
+                font-size: 0.75rem;
+                font-weight: 700;
+                min-width: 2rem;
+                height: 2rem;
+                padding: 0.25rem 0.5rem;
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-sm);
+                background: var(--surface-color);
+                cursor: pointer;
+                color: var(--text-primary);
+            }
+            
+            #zoomControls button:hover {
+                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                border-color: var(--primary-color);
+                color: var(--primary-color);
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-sm);
+            }
+            
             #zoomControls button:active {
-                background: #e0e0e0;
+                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
                 transform: scale(0.95);
             }
             
             #zoomLevel {
-                color: #333;
-                font-family: monospace;
-                font-size: 11px;
-                font-weight: bold;
-                min-width: 35px;
+                color: var(--text-primary);
+                font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+                font-size: 0.75rem;
+                font-weight: 700;
+                min-width: 2.5rem;
                 text-align: center;
-                padding: 0 2px;
+                padding: 0 0.5rem;
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                border-radius: var(--radius-sm);
+                border: 1px solid var(--border-color);
+            }
+            
+            /* Styles pour les sections de projet */
+            .project-section {
+                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                border: 1px solid #bae6fd;
+                border-radius: var(--radius-lg);
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                box-shadow: var(--shadow-sm);
+                transition: var(--transition);
+            }
+            
+            .project-section:hover {
+                box-shadow: var(--shadow-md);
+                transform: translateY(-1px);
+            }
+            
+            .config-section {
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-lg);
+                padding: 0.75rem;
+                margin-bottom: 0.75rem;
+                box-shadow: var(--shadow-sm);
             }
             
             /* Responsive design pour les colonnes */
+            @media (max-width: 1200px) {
+                #leftColumn, #rightColumn {
+                    min-width: 200px !important;
+                }
+                
+                .tabs-header {
+                    flex-wrap: wrap;
+                    gap: 0.25rem;
+                }
+                
+                .tab-button {
+                    padding: 0.5rem 1rem;
+                    font-size: 0.8rem;
+                }
+            }
+            
             @media (max-width: 768px) {
                 #leftColumn, #rightColumn {
                     min-width: 150px !important;
+                    flex: 1 1 100% !important;
                 }
+                
+                .tabs-header {
+                    flex-direction: column;
+                    gap: 0.25rem;
+                }
+                
+                .tab-button {
+                    width: 100%;
+                    text-align: center;
+                }
+                
+                .model-actions {
+                    flex-direction: column;
+                    gap: 0.25rem;
+                }
+                
+                .view-svg, .download-svg, .delete-model {
+                    width: 100%;
+                    text-align: center;
+                }
+                
+                #zoomControls {
+                    flex-wrap: wrap;
+                    gap: 0.25rem;
+                }
+                
+                #zoomControls button {
+                    flex: 1;
+                    min-width: 2rem;
+                }
+            }
+            
+            @media (max-width: 480px) {
+                .project-section, .config-section {
+                    padding: 1rem;
+                }
+                
+                .tab-content {
+                    padding: 1rem;
+                }
+                
+                button {
+                    padding: 0.5rem 1rem;
+                    font-size: 0.8rem;
+                }
+                
+                input[type="text"], input[type="number"], textarea, select {
+                    padding: 0.5rem;
+                    font-size: 0.8rem;
+                }
+                
+                #svgContainer {
+                    height: 250px !important;
+                    min-height: 250px !important;
+                }
+                
+                #contentDisplay {
+                    min-height: 250px !important;
+                }
+                
+                .tabs-container {
+                    margin-bottom: 1rem;
+                }
+                
+                .model-actions {
+                    flex-direction: column;
+                    gap: 0.25rem;
+                }
+                
+                .view-svg, .download-svg, .delete-model {
+                    width: 100%;
+                    text-align: center;
+                    padding: 0.75rem;
+                }
+            }
+            
+            /* Styles pour les écrans très larges */
+            @media (min-width: 1400px) {
+                #leftColumn {
+                    flex: 0 0 35% !important;
+                }
+                
+                #rightColumn {
+                    flex: 0 0 65% !important;
+                }
+                
+                .tabs-container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }
+            }
+            
+            /* Amélioration de la navigation tactile */
+            @media (hover: none) and (pointer: coarse) {
+                .tab-button, button, .model-item {
+                    min-height: 44px;
+                    touch-action: manipulation;
+                }
+                
+                .tab-button {
+                    padding: 1rem 1.5rem;
+                }
+                
+                button {
+                    padding: 1rem 1.5rem;
+                    font-size: 1rem;
+                }
+                
+                .model-item {
+                    padding: 1.5rem;
+                }
+                
+                .view-svg, .download-svg, .delete-model {
+                    padding: 1rem;
+                    font-size: 0.875rem;
+                }
+            }
+            
+            /* Styles pour les états de chargement */
+            .loading {
+                position: relative;
+                pointer-events: none;
+                opacity: 0.7;
+            }
+            
+            .loading::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 20px;
+                height: 20px;
+                margin: -10px 0 0 -10px;
+                border: 2px solid var(--primary-color);
+                border-top: 2px solid transparent;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                z-index: 1000;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            /* Styles pour les notifications */
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: var(--radius-md);
+                color: white;
+                font-weight: 600;
+                font-size: 0.875rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 2000;
+                animation: slideInRight 0.3s ease-out;
+                max-width: 300px;
+            }
+            
+            .notification.success {
+                background: linear-gradient(135deg, var(--success-color), #059669);
+            }
+            
+            .notification.error {
+                background: linear-gradient(135deg, var(--error-color), #dc2626);
+            }
+            
+            .notification.warning {
+                background: linear-gradient(135deg, var(--warning-color), #d97706);
+            }
+            
+            .notification.info {
+                background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            }
+            
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            /* Styles pour les tooltips */
+            .tooltip {
+                position: relative;
+                cursor: help;
+            }
+            
+            .tooltip::after {
+                content: attr(data-tooltip);
+                position: absolute;
+                bottom: 125%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--text-primary);
+                color: white;
+                padding: 0.5rem 0.75rem;
+                border-radius: var(--radius-sm);
+                font-size: 0.75rem;
+                white-space: nowrap;
+                opacity: 0;
+                visibility: hidden;
+                transition: var(--transition);
+                z-index: 1000;
+                box-shadow: var(--shadow-md);
+            }
+            
+            .tooltip::before {
+                content: '';
+                position: absolute;
+                bottom: 115%;
+                left: 50%;
+                transform: translateX(-50%);
+                border: 5px solid transparent;
+                border-top-color: var(--text-primary);
+                opacity: 0;
+                visibility: hidden;
+                transition: var(--transition);
+                z-index: 1000;
+            }
+            
+            .tooltip:hover::after,
+            .tooltip:hover::before {
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            /* Optimisations de performance avancées */
+            
+            /* Lazy loading pour les images */
+            img[data-src] {
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            
+            img[data-src].loaded {
+                opacity: 1;
+            }
+            
+            /* Optimisation des animations avec prefers-reduced-motion */
+            @media (prefers-reduced-motion: reduce) {
+                *, *::before, *::after {
+                    animation-duration: 0.01ms !important;
+                    animation-iteration-count: 1 !important;
+                    transition-duration: 0.01ms !important;
+                }
+                
+                .tab-content {
+                    animation: none;
+                }
+                
+                .notification {
+                    animation: none;
+                }
+            }
+            
+            /* Optimisation des performances pour les éléments lourds */
+            .tabs-container, #svgContainer, .model-item {
+                contain: layout style paint;
+            }
+            
+            /* Optimisation des transitions pour les éléments fréquemment animés */
+            .tab-button, button {
+                transition: var(--transition-fast);
+            }
+            
+            .model-item, .view-svg, .download-svg, .delete-model {
+                transition: var(--transition);
+            }
+            
+            /* Optimisation du rendu des scrollbars personnalisées */
+            #svgContainer::-webkit-scrollbar {
+                will-change: auto;
+            }
+            
+            #svgContainer::-webkit-scrollbar-thumb {
+                will-change: background;
+            }
+            
+            /* Optimisation des notifications */
+            .notification {
+                will-change: transform, opacity;
+                transform: translateZ(0);
+            }
+            
+            /* Optimisation des modales */
+            #projectInfoModal {
+                will-change: opacity;
+                transform: translateZ(0);
+            }
+            
+            /* Optimisation des états de chargement */
+            .loading {
+                will-change: opacity;
+            }
+            
+            .loading::after {
+                will-change: transform;
+                transform: translateZ(0);
             }
         </style>
     </head>
@@ -300,33 +876,33 @@
        <div style="display: flex; gap: 0px;">
            <div id="leftColumn" style="flex: 0 0 40%; min-width: 200px; max-width: calc(100% - 200px);">
                 <!-- Section Projet -->
-                <div style="margin-bottom: 10px; padding: 10px; background: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 4px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <h3 style="margin: 0; color: #2c5aa0;">📁 Gestion du Projet</h3>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span id="projectNameDisplay" style="font-weight: bold; color: #666; font-size: 14px;">Aucun projet ouvert</span>
-                            <button id="projectInfoButton" type="button" title="Détails du projet" style="display: none; background: #007bff; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer; font-weight: bold;">i</button>
+                <div class="project-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin: 0; color: var(--primary-color); font-size: 1.125rem; font-weight: 700;">📁 Gestion du Projet</h3>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span id="projectNameDisplay" style="font-weight: 600; color: var(--text-secondary); font-size: 0.875rem;">Aucun projet ouvert</span>
+                            <button id="projectInfoButton" type="button" title="Détails du projet" style="display: none; background: var(--primary-color); color: white; border: none; border-radius: 50%; width: 2rem; height: 2rem; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: var(--transition);">i</button>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                        <button id="saveProjectButton" type="button" title="Sauvegarder le projet complet">💾 Sauvegarder</button>
-                        <button id="loadProjectButton" type="button" title="Charger un projet">📂 Charger</button>
-                        <button id="closeProjectButton" type="button" title="Fermer le projet actuel" style="background: #ff6b6b; color: white;">🗑️ Fermer</button>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <button id="saveProjectButton" type="button" title="Sauvegarder le projet complet" class="tooltip" data-tooltip="Sauvegarder le projet complet" aria-label="Sauvegarder le projet complet">💾 Sauvegarder</button>
+                        <button id="loadProjectButton" type="button" title="Charger un projet" class="tooltip" data-tooltip="Charger un projet existant" aria-label="Charger un projet existant">📂 Charger</button>
+                        <button id="closeProjectButton" type="button" title="Fermer le projet actuel" class="tooltip" data-tooltip="Fermer le projet actuel" aria-label="Fermer le projet actuel" style="background: var(--error-color); color: white;">🗑️ Fermer</button>
                         <input id="projectFileInput" type="file" accept=".cgg" style="display: none;" />
                     </div>
                 </div>
 
                 <!-- Configuration Framacalc compacte -->
-                <div style="margin-bottom: 10px; padding: 8px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-                    <h4 style="margin: 0 0 6px 0; color: #666;">Configuration Framacalc</h4>
-                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                        <input id="framacalcUrlTextBox" type="text" placeholder="URL de votre Framacalc..." style="flex: 1; min-width: 200px; padding: 4px;" />
-                        <button id="validateCalcButton" type="button" style="padding: 4px 8px;">Charger</button>
-                        <button id="reloadDataButton" type="button" title="Recharger les données" style="padding: 4px 8px;">🔄</button>
+                <div class="config-section">
+                    <h4 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; font-weight: 600;">Configuration Framacalc</h4>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <input id="framacalcUrlTextBox" type="text" placeholder="URL de votre Framacalc..." style="flex: 1; min-width: 200px;" />
+                        <button id="validateCalcButton" type="button">Charger</button>
+                        <button id="reloadDataButton" type="button" title="Recharger les données">🔄</button>
                     </div>
                 </div>
                 
-                <iframe id="calcPage" src="" width="100%" height="500" frameborder=0 style="min-height: 100px;"> </iframe>
+                <iframe id="calcPage" src="" width="100%" height="350" frameborder=0 style="min-height: 100px;"> </iframe>
            </div>
            
            <!-- Zone de redimensionnement -->
@@ -336,170 +912,185 @@
            
            <div id="rightColumn" style="flex: 0 0 60%; min-width: 200px; max-width: calc(100% - 200px);">
                 <!-- Système d'onglets au-dessus du SVG -->
-                <div class="tabs-container">
+                <div class="tabs-container" role="tablist" aria-label="Navigation principale">
                     <div class="tabs-header">
-                        <button class="tab-button active" data-tab="models">Modèles de cartes</button>
-                        <button class="tab-button" data-tab="images">Images sources</button>
-                        <button class="tab-button" data-tab="texts">Textes sources</button>
-                        <button class="tab-button" data-tab="generation">Génération</button>
-                        <button class="tab-button" data-tab="sheet">Planche de cartes</button>
+                        <button class="tab-button active" data-tab="models" role="tab" aria-selected="true" aria-controls="models-tab" id="tab-models" aria-label="Onglet Modèles de cartes">Modèles de cartes</button>
+                        <button class="tab-button" data-tab="images" role="tab" aria-selected="false" aria-controls="images-tab" id="tab-images" aria-label="Onglet Images sources">Images sources</button>
+                        <button class="tab-button" data-tab="texts" role="tab" aria-selected="false" aria-controls="texts-tab" id="tab-texts" aria-label="Onglet Textes sources">Textes sources</button>
+                        <button class="tab-button" data-tab="generation" role="tab" aria-selected="false" aria-controls="generation-tab" id="tab-generation" aria-label="Onglet Génération">Génération</button>
+                        <button class="tab-button" data-tab="sheet" role="tab" aria-selected="false" aria-controls="sheet-tab" id="tab-sheet" aria-label="Onglet Planche de cartes">Planche de cartes</button>
                     </div>
                     
                    <!-- Titre du SVG avec contrôles de zoom -->
-                   <div id="svgTitle" style="display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; padding: 10px; background: #f0f0f0; border: 1px solid #ddd;">
-                       <span id="svgTitleText">Modèle : Aucun</span>
+                   <div id="svgTitle" style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1.125rem; padding: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid var(--border-color); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--shadow-sm);">
+                       <span id="svgTitleText" style="color: var(--text-primary);">Modèle : Aucun</span>
                        <!-- Interface de zoom -->
-                       <div id="zoomControls" style="display: flex; gap: 5px; align-items: center; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc;">
-                           <button id="zoomOut" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer; font-size: 12px;" title="Dézoomer">−</button>
-                           <span id="zoomLevel" style="font-size: 11px; min-width: 35px; text-align: center; font-weight: bold; font-family: monospace;">100%</span>
-                           <button id="zoomIn" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer; font-size: 12px;" title="Zoomer">+</button>
-                           <button id="zoomReset" style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer; font-size: 12px;" title="Réinitialiser le zoom">⌂</button>
+                       <div id="zoomControls" style="display: flex; gap: 0.5rem; align-items: center;" role="group" aria-label="Contrôles de zoom">
+                           <button id="zoomOut" title="Dézoomer" aria-label="Dézoomer" class="tooltip" data-tooltip="Dézoomer (Ctrl + Molette)">−</button>
+                           <span id="zoomLevel" aria-live="polite" aria-label="Niveau de zoom actuel">100%</span>
+                           <button id="zoomIn" title="Zoomer" aria-label="Zoomer" class="tooltip" data-tooltip="Zoomer (Ctrl + Molette)">+</button>
+                           <button id="zoomReset" title="Réinitialiser le zoom" aria-label="Réinitialiser le zoom" class="tooltip" data-tooltip="Réinitialiser le zoom">⌂</button>
                        </div>
                    </div>
                     
-                   <!-- Zone de contenu principale avec scrollbars -->
-                   <div id="svgContainer" style="width: 100%; height: 500px; min-width: 500px; min-height: 500px; overflow: auto; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; position: relative;">
-                       <div id="contentDisplay" style="width: 100%; height: 100%; min-width: 500px; min-height: 500px; display: flex; justify-content: center; align-items: center; background: #f5f5f5;">
+                   <!-- Zone de contenu principal avec scrollbars -->
+                   <div id="svgContainer" style="width: 100%; height: 350px; min-width: 500px; min-height: 350px; overflow: auto; border: 1px solid var(--border-color); border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); position: relative; box-shadow: var(--shadow-sm);" role="img" aria-label="Zone d'affichage du contenu SVG" tabindex="0">
+                       <div id="contentDisplay" style="width: 100%; height: 100%; min-width: 500px; min-height: 350px; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);" aria-live="polite" aria-label="Contenu affiché">
                            <!-- Le contenu sera chargé ici directement -->
                        </div>
                    </div>
                 </div>
                 
                 <!-- Contenu des onglets sous le SVG -->
-                <div style="margin-top: 10px; overflow: hidden; width: 100%;">
+                <div style="margin-top: 0.75rem; overflow: hidden; width: 100%;">
                     <!-- Onglet Modèles de cartes -->
-                    <div id="models-tab" class="tab-content active">
-                        <h3>Gestion des Modèles SVG</h3>
+                    <div id="models-tab" class="tab-content active" role="tabpanel" aria-labelledby="tab-models" aria-hidden="false">
+                        <h3 style="color: var(--text-primary); font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Gestion des Modèles SVG</h3>
                         
                         <!-- Zone de saisie du nom du modèle -->
-                        <div style="margin-bottom: 15px;">
-                            <label for="modelNameInput">Nom du modèle :</label><br>
-                            <input type="text" id="modelNameInput" placeholder="Entrez un nom pour le modèle" style="width: 100%; max-width: 100%; box-sizing: border-box; margin-bottom: 5px;" />
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                            <label for="modelNameInput">Nom du modèle :</label>
+                            <input type="text" id="modelNameInput" placeholder="Entrez un nom pour le modèle" style="margin-bottom: 0.75rem;" />
                             <button id="saveModelButton" type="button">AJOUTER LE MODÈLE</button>
                         </div>
                         
                         <!-- Liste des modèles sauvegardés -->
-                        <div style="margin-bottom: 15px;">
-                            <h4>Modèles sauvegardés :</h4>
-                            <div id="modelsList" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
-                                <p style="color: #666; font-style: italic;">Aucun modèle sauvegardé</p>
+                        <div style="margin-bottom: 1rem;">
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Modèles sauvegardés :</h4>
+                            <div id="modelsList" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.75rem; background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                                <p style="color: var(--text-secondary); font-style: italic; text-align: center; margin: 1.5rem 0;">Aucun modèle sauvegardé</p>
                             </div>
                         </div>
                         
                         <!-- Zone d'édition SVG -->
-                        <div>
-                            <label for="svgTextBox">Code SVG (plusieurs lignes) :</label><br>
-                            <textarea id="svgTextBox" rows="6" style="width: 100%; max-width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px;" readonly="false"></textarea>
-                        </div>
-                        
-                        <div style="margin-top: 10px;">
-                            <button id="validateSVGButton" type="button">CHARGER DEPUIS SVG LE CODE</button>
-                            <br><br>
-                            Ou sélectionnez un fichier SVG local :
-                            <input type="file" id="svgFileInput" accept=".svg" />
-                            <button id="loadSVGButton" type="button">CHARGER SVG DEPUIS LE FICHIER</button>
+                        <div style="padding: 1rem; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                            <label for="svgTextBox">Code SVG (plusieurs lignes) :</label>
+                            <textarea id="svgTextBox" rows="4" style="font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace; font-size: 0.8rem; margin-bottom: 0.75rem;" readonly="false"></textarea>
+                            
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                                <button id="validateSVGButton" type="button">CHARGER DEPUIS SVG LE CODE</button>
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Ou sélectionnez un fichier SVG local :</span>
+                                    <input type="file" id="svgFileInput" accept=".svg" style="width: auto; flex: 0 0 auto;" />
+                                    <button id="loadSVGButton" type="button">CHARGER SVG DEPUIS LE FICHIER</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Onglet Images sources -->
-                    <div id="images-tab" class="tab-content">
-                        <h3>Images Sources</h3>
+                    <div id="images-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-images" aria-hidden="true">
+                        <h3 style="color: var(--text-primary); font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Images Sources</h3>
                         
                         <!-- Zone d'upload d'images -->
-                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
-                            <h4>Uploader une image :</h4>
-                            <input type="file" id="imageFileInput" accept="image/*" style="margin-bottom: 10px;" />
-                            <br>
-                            <label for="imageNameInput">Nom de l'image :</label><br>
-                            <input type="text" id="imageNameInput" placeholder="Entrez un nom pour l'image" style="width: 200px; margin-right: 10px;" />
-                            <button id="uploadImageButton" type="button">UPLOADER L'IMAGE</button>
+                        <div style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border-color); background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Uploader une image :</h4>
+                            <input type="file" id="imageFileInput" accept="image/*" style="margin-bottom: 0.75rem;" />
+                            <div style="display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label for="imageNameInput">Nom de l'image :</label>
+                                    <input type="text" id="imageNameInput" placeholder="Entrez un nom pour l'image" />
+                                </div>
+                                <button id="uploadImageButton" type="button">UPLOADER L'IMAGE</button>
+                            </div>
                         </div>
                         
                         <!-- Liste des images uploadées -->
                         <div>
-                            <h4>Images uploadées :</h4>
-                            <div id="imagesList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
-                                <p style="color: #666; font-style: italic;">Aucune image uploadée</p>
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Images uploadées :</h4>
+                            <div id="imagesList" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.75rem; background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                                <p style="color: var(--text-secondary); font-style: italic; text-align: center; margin: 1.5rem 0;">Aucune image uploadée</p>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Onglet Textes sources -->
-                    <div id="texts-tab" class="tab-content">
-                        <h3>Textes Sources</h3>
+                    <div id="texts-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-texts" aria-hidden="true">
+                        <h3 style="color: var(--text-primary); font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Textes Sources</h3>
                         
                         <!-- Zone d'upload de textes -->
-                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
-                            <h4>Uploader un fichier texte :</h4>
-                            <input type="file" id="textFileInput" accept=".txt" style="margin-bottom: 10px;" />
-                            <br>
-                            <label for="textNameInput">Nom du texte :</label><br>
-                            <input type="text" id="textNameInput" placeholder="Entrez un nom pour le texte" style="width: 200px; margin-right: 10px;" />
-                            <button id="uploadTextButton" type="button">UPLOADER LE TEXTE</button>
+                        <div style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border-color); background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Uploader un fichier texte :</h4>
+                            <input type="file" id="textFileInput" accept=".txt" style="margin-bottom: 0.75rem;" />
+                            <div style="display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label for="textNameInput">Nom du texte :</label>
+                                    <input type="text" id="textNameInput" placeholder="Entrez un nom pour le texte" />
+                                </div>
+                                <button id="uploadTextButton" type="button">UPLOADER LE TEXTE</button>
+                            </div>
                         </div>
                         
                         <!-- Liste des textes uploadés -->
                         <div>
-                            <h4>Textes uploadés :</h4>
-                            <div id="textsList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
-                                <p style="color: #666; font-style: italic;">Aucun texte uploadé</p>
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Textes uploadés :</h4>
+                            <div id="textsList" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.75rem; background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                                <p style="color: var(--text-secondary); font-style: italic; text-align: center; margin: 1.5rem 0;">Aucun texte uploadé</p>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Onglet Génération -->
-                    <div id="generation-tab" class="tab-content">
-                        <h3>Génération de Cartes</h3>
+                    <div id="generation-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-generation" aria-hidden="true">
+                        <h3 style="color: var(--text-primary); font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Génération de Cartes</h3>
                         
                         <!-- Zone de génération -->
-                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
-                            <h4>Générer une carte :</h4>
-                            <p>
-                                <label for="modelSelector">Modèle à utiliser :</label><br>
-                                <select id="modelSelector" style="width: 200px; margin-right: 10px; margin-bottom: 10px;">
-                                    <option value="">Sélectionner un modèle</option>
-                                </select>
-                            </p>
-                            <p>
-                                <label for="cardLineInput">Numéro de ligne de la carte :</label><br>
-                                <input id="cardLineInput" type="number" min="1" value="1" style="width: 100px; margin-right: 10px;" />
-                                <button id="generateCardButton" type="button">GÉNÉRER LA CARTE</button>
-                            </p>
+                        <div style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border-color); background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Générer une carte :</h4>
+                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label for="modelSelector">Modèle à utiliser :</label>
+                                    <select id="modelSelector">
+                                        <option value="">Sélectionner un modèle</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap;">
+                                    <div>
+                                        <label for="cardLineInput">Numéro de ligne :</label>
+                                        <input id="cardLineInput" type="number" min="1" value="1" style="width: 100px;" />
+                                    </div>
+                                    <button id="generateCardButton" type="button">GÉNÉRER LA CARTE</button>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Liste des cartes générées -->
-                        <div style="margin-bottom: 15px;">
-                            <h4>Cartes générées :</h4>
-                            <div id="generatedCardsList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
-                                <p style="color: #666; font-style: italic;">Aucune carte générée</p>
+                        <div>
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Cartes générées :</h4>
+                            <div id="generatedCardsList" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.75rem; background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                                <p style="color: var(--text-secondary); font-style: italic; text-align: center; margin: 1.5rem 0;">Aucune carte générée</p>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Onglet Planche de cartes -->
-                    <div id="sheet-tab" class="tab-content">
-                        <h3>Planche de Cartes</h3>
+                    <div id="sheet-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-sheet" aria-hidden="true">
+                        <h3 style="color: var(--text-primary); font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Planche de Cartes</h3>
                         
                         <!-- Grille 3x3 des sélecteurs -->
-                        <div style="margin-bottom: 15px;">
-                            <h4>Sélection des cartes :</h4>
-                            <div id="sheetSelectors" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 15px;">
+                        <div style="margin-bottom: 1rem;">
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Sélection des cartes :</h4>
+                            <div id="sheetSelectors" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; padding: 0.75rem; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
                                 <!-- Les 9 sélecteurs seront générés dynamiquement -->
                             </div>
                         </div>
                         
                         <!-- Zone de sauvegarde de la planche -->
-                        <div style="margin-bottom: 15px;">
-                            <label for="sheetNameInput">Nom de la planche :</label><br>
-                            <input type="text" id="sheetNameInput" placeholder="Entrez un nom pour la planche" style="width: 200px; margin-right: 10px;" />
-                            <button id="saveSheetButton" type="button">SAUVEGARDER LA PLANCHE</button>
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label for="sheetNameInput">Nom de la planche :</label>
+                                    <input type="text" id="sheetNameInput" placeholder="Entrez un nom pour la planche" />
+                                </div>
+                                <button id="saveSheetButton" type="button">SAUVEGARDER LA PLANCHE</button>
+                            </div>
                         </div>
                         
                         <!-- Liste des planches sauvegardées -->
                         <div>
-                            <h4>Planches sauvegardées :</h4>
-                            <div id="sheetsList" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
-                                <p style="color: #666; font-style: italic;">Aucune planche sauvegardée</p>
+                            <h4 style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Planches sauvegardées :</h4>
+                            <div id="sheetsList" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.75rem; background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+                                <p style="color: var(--text-secondary); font-style: italic; text-align: center; margin: 1.5rem 0;">Aucune planche sauvegardée</p>
                             </div>
                         </div>
                     </div>
@@ -510,33 +1101,46 @@
 	      <div id="svgPreview"></div>
 
         <!-- Boîte de dialogue pour les détails du projet -->
-        <div id="projectInfoModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-            <div style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; border-radius: 8px; width: 400px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; color: #2c5aa0;">📋 Détails du Projet</h3>
-                    <button id="closeProjectInfoModal" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer;">✕</button>
+        <div id="projectInfoModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+            <div style="background: var(--surface-color); margin: 5% auto; padding: 2rem; border: 1px solid var(--border-color); border-radius: var(--radius-lg); width: 500px; max-width: 90%; box-shadow: var(--shadow-lg); animation: modalSlideIn 0.3s ease-out;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0; color: var(--primary-color); font-size: 1.25rem; font-weight: 700;">📋 Détails du Projet</h3>
+                    <button id="closeProjectInfoModal" style="background: var(--error-color); color: white; border: none; border-radius: var(--radius-sm); padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; transition: var(--transition);">✕</button>
                 </div>
-                <div style="margin-bottom: 15px;">
-                    <label for="projectInfoName" style="display: block; margin-bottom: 5px; font-weight: bold;">Nom du projet :</label>
-                    <input id="projectInfoName" type="text" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" />
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="projectInfoName" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Nom du projet :</label>
+                    <input id="projectInfoName" type="text" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; font-size: 0.875rem;" />
                 </div>
-                <div style="margin-bottom: 15px;">
-                    <label for="projectInfoVersion" style="display: block; margin-bottom: 5px; font-weight: bold;">Version :</label>
-                    <input id="projectInfoVersion" type="text" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" />
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="projectInfoVersion" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Version :</label>
+                    <input id="projectInfoVersion" type="text" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; font-size: 0.875rem;" />
                 </div>
-                <div style="margin-bottom: 15px;">
-                    <label for="projectInfoDescription" style="display: block; margin-bottom: 5px; font-weight: bold;">Description :</label>
-                    <textarea id="projectInfoDescription" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical;"></textarea>
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="projectInfoDescription" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Description :</label>
+                    <textarea id="projectInfoDescription" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-sizing: border-box; resize: vertical; font-size: 0.875rem;"></textarea>
                 </div>
-                <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 12px; color: #666;">
-                    <div><strong>Créé le :</strong> <span id="projectInfoCreated">-</span></div>
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--text-secondary); border: 1px solid var(--border-color);">
+                    <div style="margin-bottom: 0.5rem;"><strong>Créé le :</strong> <span id="projectInfoCreated">-</span></div>
                     <div><strong>Dernière modification :</strong> <span id="projectInfoModified">-</span></div>
                 </div>
-                <div style="text-align: center; color: #666; font-size: 12px; font-style: italic;">
+                <div style="text-align: center; color: var(--text-secondary); font-size: 0.875rem; font-style: italic; padding: 1rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: var(--radius-md); border: 1px solid #bae6fd;">
                     Les modifications sont sauvegardées automatiquement à la fermeture
                 </div>
             </div>
         </div>
+        
+        <style>
+            @keyframes modalSlideIn {
+                from { 
+                    opacity: 0; 
+                    transform: translateY(-50px) scale(0.95); 
+                }
+                to { 
+                    opacity: 1; 
+                    transform: translateY(0) scale(1); 
+                }
+            }
+        </style>
 
     </body>
 
