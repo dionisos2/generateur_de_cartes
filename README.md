@@ -1,6 +1,8 @@
 # Intro
 cards-generator is a javascript software to generate printable game cards based on svg templates and Framacalc spreadsheets to fill these templates.
 
+This project isn't maintained anymore. If you are interested, go see this fork : https://github.com/Mini-pen/Online_cards_generator
+
 # Install
 Install dependances
 
